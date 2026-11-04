@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BEP Birim Toplantı Takvimi</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--tx:#1d2433;--mu:#6b7385;--bd:#dfe3ec;--pr:#5b3fd0;--prt:#fff;--ok:#157347;--okb:#e3f5ea;--er:#b42318;--erb:#fdeceb;--wa:#8a5a00;--wab:#fff4d6;--hd:#eef0f7;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14161d;--card:#1d2029;--tx:#e8eaf2;--mu:#9aa2b5;--bd:#333847;--pr:#9d86ff;--prt:#14161d;--ok:#5fd38d;--okb:#17301f;--er:#ff8a80;--erb:#3a1e1c;--wa:#ffd27a;--wab:#38300f;--hd:#262a36;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14161d;--card:#1d2029;--tx:#e8eaf2;--mu:#9aa2b5;--bd:#333847;--pr:#9d86ff;--prt:#14161d;--ok:#5fd38d;--okb:#17301f;--er:#ff8a80;--erb:#3a1e1c;--wa:#ffd27a;--wab:#38300f;--hd:#262a36;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px}.sub{color:var(--mu);font-size:13px;margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--mu);margin:10px 0 4px}
+select,input{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font:inherit}
+button{padding:10px 16px;border:0;border-radius:8px;background:var(--pr);color:var(--prt);font:inherit;font-weight:600;cursor:pointer}
+button.g{background:transparent;color:var(--mu);border:1px solid var(--bd);padding:6px 10px;font-weight:500}
+.login{max-width:380px;margin:8vh auto}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.rules{font-size:13px;color:var(--mu);margin:8px 0 0;padding-left:18px}
+.banner{padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:14px;display:none}
+.banner.er{display:block;background:var(--erb);color:var(--er)}.banner.ok{display:block;background:var(--okb);color:var(--ok)}.banner.wa{display:block;background:var(--wab);color:var(--wa)}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:820px}
+th{background:var(--hd);text-align:left;font-size:12px;color:var(--mu);padding:8px;position:sticky;top:0}
+td{padding:8px;border-top:1px solid var(--bd);vertical-align:middle}
+td.n{font-weight:600}.sm{font-size:12px;color:var(--mu)}
+td input[type=date]{min-width:150px;padding:7px}
+td.bad input{border-color:var(--er)}.msg{font-size:12px;color:var(--er);margin-top:3px}
+.tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:99px;background:var(--hd);color:var(--mu)}
+.tag.ok{background:var(--okb);color:var(--ok)}.tag.wa{background:var(--wab);color:var(--wa)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.row>*{flex:1;min-width:150px}
+.days{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.printonly{display:none}
+@media print{body{background:#fff!important;color:#000!important}#app>*:not(.printonly){display:none!important}.printonly{display:block!important;color:#000}.printonly h2{margin:0 0 4px;font-size:18px}.printonly p{margin:0 0 10px;font-size:12px}.pt{width:100%;min-width:0;border-collapse:collapse;font-size:12px}.pt th,.pt td{border:1px solid #444;padding:5px 6px;text-align:left;color:#000;background:#fff;position:static}.pt th{background:#e8e8e8}.pt tr{break-inside:avoid}.wrap{padding:0;max-width:none}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+// ---- AYARLAR (okul tarafından değiştirilebilir) ----
+var TEACHER_CODE = "bep2026";     // öğretmen giriş kodu
+var ADMIN_CODE   = "yonetici2026"; // yönetici giriş kodu
+var MAX_PER_DAY  = 3;
+// 2. toplantı otomatik atama penceresi: 2. dönem 8 Şubat 2027'de başlar; ilk hafta atlanır, ayın ikinci haftasından itibaren 1 ay
+var SEC_START = "2027-02-15", SEC_END = "2027-03-15", MIN_GAP = 7;
+var LAST_DAY     = "2027-06-25";
+// Hafta sonları ayrıca engellenir. Aşağıdaki liste MEB 2026-2027 takvimine göredir; gerekirse düzenleyin.
+var HOL = {};
+function addRange(a,b,name){var d=new Date(a+"T12:00:00"),e=new Date(b+"T12:00:00");for(;d<=e;d.setDate(d.getDate()+1)){HOL[iso(d)]=name}}
+function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+addRange("2026-11-16","2026-11-20","Kasım ara tatili");
+addRange("2027-01-01","2027-01-01","Yılbaşı");
+addRange("2027-01-25","2027-02-05","Yarıyıl tatili");
+addRange("2027-03-08","2027-03-12","Mart ara tatili");
+addRange("2027-03-09","2027-03-11","Ramazan Bayramı");
+addRange("2027-04-23","2027-04-23","23 Nisan Ulusal Egemenlik ve Çocuk Bayramı");
+addRange("2027-05-01","2027-05-01","Emek ve Dayanışma Günü");
+addRange("2027-05-16","2027-05-19","Kurban Bayramı");
+addRange("2027-05-19","2027-05-19","19 Mayıs Atatürk’ü Anma, Gençlik ve Spor Bayramı");
+
+// ---- ÖĞRENCİLER ---- grup|ad|sınıf|numara|öğretmen|durum
+var RAW=[
+"Hafif Zihinsel|UMUTCAN GÜNER|2 Hafif / AA|201|FİKRİYE UYSAL UÇKAN|",
+"Hafif Zihinsel|HAFİZE BALOĞLU|2 Hafif / AA|956|FİKRİYE UYSAL UÇKAN|",
+"Hafif Zihinsel|ASYA KARAKUŞ|2 Hafif / AA|259|ZEYNEP TURAN|",
+"Hafif Zihinsel|EREN TOPRAK ÇETİN|3 Hafif / AA|740|ZEYNEP TURAN|S.D (nakil)",
+"Hafif Zihinsel|SAMET BERAT KAPLAN|4 Hafif / A|57|ZEYNEP TURAN|",
+"Orta Ağır Zihinsel|SARE KARABULUT|1 Orta Ağır / AA|250|HATİCE TURAN DİNÇ|",
+"Orta Ağır Zihinsel|YILMAZEFE VAROL|1 Orta Ağır / AA|122|HATİCE TURAN DİNÇ|",
+"Orta Ağır Zihinsel|UMUT BARUT|1 Orta Ağır / AA|978|HATİCE TURAN DİNÇ|",
+"Orta Ağır Zihinsel|İBRAHİM ELHAC İBRAHİM|3 Orta Ağır / AA|921|HATİCE TURAN DİNÇ|S.D (taşınmış)",
+"Orta Ağır Zihinsel|YİĞİT EMEKDER|3 Orta Ağır / AA|454|HATİCE TURAN DİNÇ|",
+"Orta Ağır Zihinsel|FATMA KILAN|4 Orta Ağır / A|77|RÜMEYSA GÜLER|",
+"Orta Ağır Zihinsel|MENESA İSRA EROĞLU|4 Orta Ağır / A|1590|HATİCE TURAN DİNÇ|S.D (nakil)",
+"Otistik Hafif|ARAF ERDEM GÜRSOY|1 Otistik / A|40|GÜLŞAH GÜNAY KULAK|",
+"Otistik Hafif|ERTUĞRUL CEYLAN|4 Otistik / A|170|EBRU AKPINAR CENGİZ|",
+"Otistik Hafif|ASRIN KEREM KAYAOĞLU|4 Otistik / A|5|EBRU AKPINAR CENGİZ|",
+"Kaynaştırma|ŞÜKRÜ BURAK AÇIL|1 / B|75|TÜLAY DERDİYOK|",
+"Kaynaştırma|EGE MOLLA|2 / A|851|DÖNAY ÇELİK|",
+"Kaynaştırma|YUSUF MAHİR BİNGÖL|2 / D|442|HÜLYA ŞELECİ|",
+"Kaynaştırma|YUSUF TALHA KARAKAŞ|2 / F|145|YAŞAM DEMİRCİOĞLU|",
+"Kaynaştırma|MESUT ASLANATA|3 / B|181|KEVSER ŞİMŞEK|",
+"Kaynaştırma|HİRANUR KÖSE|3 / D|457|SİNEM DEMİR TEK|",
+"Kaynaştırma|DAMLA UÇAR|3 / E|163|BUKET ATALAY|",
+"Kaynaştırma|BURAK UBEYDULLAH MERMİ|4 / A|816|GÖKHAN SÜSLÜ|",
+"Kaynaştırma|ALİ AYAZ KAZAN|4 / B|1050|ZEYNEP BİLGEN|",
+"Kaynaştırma|HAMZA EYMEN ERHAN|4 / B|1553|ZEYNEP BİLGEN|",
+"Kaynaştırma|MUHAMMED EROĞLU|4 / D|1053|BURCU SELÇİN|",
+"Kaynaştırma|KENAN YİĞİT İNANÇ|4 / E|222|ŞEYMA NUR DURMUŞ|",
+"Kaynaştırma|SELEN ÜSTÜNÇAĞ|4 / F|240|SELÇUK TOPÇUOĞLU|",
+"Kaynaştırma|ESMA SULTAN CEBESOY|4 / F|1250|SELÇUK TOPÇUOĞLU|",
+"Kaynaştırma|DOĞA DALKILIÇ|Ana / B|1062|GÜLGÜN TOPAK|",
+"Kaynaştırma|ERİM DÖNMEZ|Ana / C|1043|BURCU GÜLER|",
+"RAM Kademe Farkı|MİRAÇ EFE ŞAHAN|1 / C|334|GÜLER MURATOĞLU|ulaşılamıyor",
+"RAM Kademe Farkı|ŞAKİR TALHA GÖKÇE|1 / F|577|DURAN KARADAĞ|ulaşılamıyor",
+"RAM Kademe Farkı|NECATİCAN YAVUZ|2 / F|989|YAŞAM DEMİRCİOĞLU|",
+"RAM Kademe Farkı|HAMZA DORUK DEMİR|3 / D|116|SİNEM DEMİR TEK|"];
+var S=RAW.map(function(r,i){var p=r.split("|");return{id:"s"+(i+1),grp:p[0],name:p[1],cls:p[2],no:p[3],t:p[4],st:p[5]}});
+var TEACHERS=[];S.forEach(function(s){if(TEACHERS.indexOf(s.t)<0)TEACHERS.push(s.t)});TEACHERS.sort(function(a,b){return a.localeCompare(b,"tr")});
+
+// ---- DURUM ----
+var me=null, admin=false, meetings={}, col=null, shared=false, flash=null, rowErr={}, filterT="", tab=1;
+var app=document.getElementById("app");
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function today(){return iso(new Date())}
+function fmt(d){var x=new Date(d+"T12:00:00");return x.toLocaleDateString("tr-TR",{day:"2-digit",month:"2-digit",year:"numeric"})+" "+x.toLocaleDateString("tr-TR",{weekday:"long"})}
+function countOn(d,except){var n=0;for(var k in meetings){if(k!==except&&meetings[k].date===d)n++}return n}
+function check(d,sid,first){
+  if(!d)return null;
+  var x=new Date(d+"T12:00:00"),w=x.getDay();
+  if(d<today())return"Geçmiş bir tarih seçilemez.";
+  if(first&&d<=first)return"2. toplantı, 1. toplantıdan ("+fmt(first)+") sonraki bir gün olmalıdır.";
+  if(d>LAST_DAY)return"Seçilen tarih eğitim öğretim yılı dışında ("+fmt(LAST_DAY)+" son gün).";
+  if(w===6||w===0)return fmt(d)+" hafta sonuna denk geliyor. Lütfen bir hafta içi gün seçin.";
+  if(HOL[d])return fmt(d)+" tatil günü ("+HOL[d]+"). Lütfen başka bir gün seçin.";
+  if(countOn(d,sid)>=MAX_PER_DAY)return fmt(d)+" günü için "+MAX_PER_DAY+" toplantı kontenjanı dolu. Lütfen başka bir gün seçin.";
+  return null}
+
+async function save(sid,d){
+  var base=sid.replace("_2",""),n2=sid!==base;
+  var s=S.filter(function(x){return x.id===base})[0];
+  var err=check(d,sid,n2&&meetings[base]?meetings[base].date:null);
+  if(!err&&n2&&!meetings[base])err="Önce 1. toplantı tarihini girin.";
+  if(!err&&col){try{var q=await col.get();var n=0;q.docs.forEach(function(x){var v=x.data();if(x.id!==sid&&v&&v.date===d)n++});if(n>=MAX_PER_DAY)err=fmt(d)+" günü için "+MAX_PER_DAY+" toplantı kontenjanı dolu. Lütfen başka bir gün seçin."}catch(e){}}
+  if(err){rowErr[sid]=err;flash={c:"er",t:s.name+": "+err};render();return}
+  delete rowErr[sid];
+  var rec={sid:sid,date:d,teacher:me,ts:Date.now()};
+  try{if(col)await col.doc(sid).set(rec);else meetings[sid]=rec}catch(e){flash={c:"er",t:"Kayıt yapılamadı. Bu sayfada yazma yetkiniz olmayabilir."};render();return}
+  flash={c:"ok",t:s.name+" için BEP "+(n2?"2":"1")+". birim toplantısı "+fmt(d)+" olarak kaydedildi."};render()}
+async function clearDate(sid){delete rowErr[sid];var ids=[sid];if(sid.indexOf("_2")<0&&meetings[sid+"_2"])ids.push(sid+"_2");
+  try{for(var i=0;i<ids.length;i++){if(col)await col.doc(ids[i]).delete();else delete meetings[ids[i]]}}catch(e){}flash=null;render()}
+
+function addDays(d,n){var x=new Date(d+"T12:00:00");x.setDate(x.getDate()+n);return iso(x)}
+function okDay(d){var w=new Date(d+"T12:00:00").getDay();return w!==0&&w!==6&&!HOL[d]}
+// 2. toplantıları 1. toplantı sırasına göre pencereye eşit yayarak atar
+async function autoAssign(list){
+  var el=list.filter(function(s){return!s.st||s.st==="ulaşılamıyor"});
+  var need=el.filter(function(s){return meetings[s.id]&&!meetings[s.id+"_2"]}).sort(function(a,b){var x=meetings[a.id].date,y=meetings[b.id].date;return x<y?-1:x>y?1:(+a.no)-(+b.no)});
+  var miss=el.filter(function(s){return!meetings[s.id]}).length;
+  if(!need.length){flash={c:"wa",t:"Otomatik atanacak öğrenci yok."+(miss?" 1. toplantı tarihi girilmemiş "+miss+" öğrenci var; önce 1. toplantıyı girin.":"")};render();return}
+  var win=[];for(var d=SEC_START;d<=SEC_END;d=addDays(d,1))if(okDay(d)&&d>=today())win.push(d);
+  var tmp={};for(var k in meetings)tmp[k]=meetings[k];
+  function cnt(x){var n=0;for(var k in tmp)if(tmp[k].date===x)n++;return n}
+  var soft=Math.max(1,Math.ceil(need.length/Math.max(win.length,1))),out=[],fail=[];
+  need.forEach(function(s,i){
+    var min=addDays(tmp[s.id].date,MIN_GAP),c=win.filter(function(x){return x>=min});
+    if(!c.length){for(var x=min;x<=LAST_DAY;x=addDays(x,1))if(okDay(x)&&x>=today()){c.push(x);if(c.length>=15)break}}
+    var t=Math.floor(i*c.length/need.length),pick=null;
+    for(var lim=soft;lim<=MAX_PER_DAY&&!pick;lim++){for(var j=0;j<c.length&&!pick;j++){var idx=(t+j)%c.length;if(cnt(c[idx])<lim)pick=c[idx]}}
+    if(!pick){fail.push(s.name);return}
+    tmp[s.id+"_2"]={sid:s.id+"_2",date:pick,teacher:me,ts:Date.now()};out.push(s.id+"_2")});
+  try{for(var q=0;q<out.length;q++){var r=tmp[out[q]];if(col)await col.doc(out[q]).set(r);else meetings[out[q]]=r}}catch(e){flash={c:"er",t:"Atama sırasında kayıt yapılamadı. Yazma yetkiniz olmayabilir."};render();return}
+  flash={c:fail.length?"wa":"ok",t:out.length+" öğrenci için 2. toplantı tarihi atandı."+(fail.length?" Yer bulunamadı: "+fail.join(", ")+".":"")+(miss?" 1. toplantısı girilmemiş "+miss+" öğrenci atlandı.":"")};render()}
+
+// ---- GÖRÜNÜM ----
+function loginView(){
+  app.innerHTML='<div class="card login"><h1>BEP Birim Toplantı Takvimi</h1><p class="sub">Lütfen giriş yapın.</p>'+
+  '<label>Öğretmen</label><select id="lt"><option value="">Seçiniz…</option><option value="__admin">Yönetici (tüm öğrenciler)</option>'+TEACHERS.map(function(t){return"<option>"+esc(t)+"</option>"}).join("")+'</select>'+
+  '<label>Giriş kodu</label><input id="lc" type="password" autocomplete="off"><div id="le" class="msg"></div>'+
+  '<p style="margin:14px 0 0"><button id="lb" style="width:100%">Giriş yap</button></p></div>';
+  function go(){var t=document.getElementById("lt").value,c=document.getElementById("lc").value,e=document.getElementById("le");
+    if(!t){e.textContent="Lütfen adınızı seçin.";return}
+    if(t==="__admin"?c!==ADMIN_CODE:c!==TEACHER_CODE){e.textContent="Giriş kodu hatalı.";return}
+    admin=t==="__admin";me=admin?"Yönetici":t;flash=null;render()}
+  document.getElementById("lb").onclick=go;document.getElementById("lc").onkeydown=function(e){if(e.key==="Enter")go()}}
+
+// ---- BEP TOPLANTI FORMU ----
+var view=null,FORMS={},LOADED={},fcol=null;
+var FORM_CSS=`.paper{background:#fff;color:#000;border:1px solid #444;padding:14px;font:12.5px/1.35 "Times New Roman",Times,serif;max-width:820px;margin:0 auto}
+.paper h1{text-align:center;font-size:17px;margin:0 0 8px}
+.paper h2{font-size:12.5px;margin:8px 0 4px;text-align:center;background:#e8e8e8;border:1px solid #444;padding:2px}
+.paper table{border-collapse:collapse;width:100%;min-width:0}
+.paper th,.paper td{border:1px solid #444;padding:3px 5px;text-align:left;vertical-align:top;background:#fff;color:#000;font-size:12px;position:static}
+.paper th{background:#e8e8e8;white-space:nowrap}
+.cols{display:grid;grid-template-columns:1.6fr 1fr;gap:12px;margin-top:6px}
+.it{display:flex;gap:6px;margin-bottom:3px}.it b{min-width:16px}.it>div,.it>textarea{flex:1}
+.paper textarea,.paper input{width:100%;border:0;border-bottom:1px dotted #777;border-radius:0;padding:2px;background:transparent;color:#000;font:inherit;resize:none;overflow:hidden}
+.paper .v{white-space:pre-wrap;min-height:1em}
+.kt td{height:28px}.kt td:nth-child(3){width:28%}
+.nx{margin:10px 0 0}`;
+function dmy(d,sep){return d.split("-").reverse().join(sep||".")}
+function defs(s,n){
+  var nx=n===1?meetings[s.id+"_2"]:null,nm=s.name,k=s.grp==="Kaynaştırma"||s.grp==="RAM Kademe Farkı",nxt=nx?dmy(nx.date,"/"):"…../……/202….";
+  return{dogum:"",cin:"",anne:"",srh:k?s.t:"",ozel:k?"":s.t,rh1:"",rh2:"",bsk:"",dg1g:"",dg1:"",dg2g:"",dg2:"",dg3g:"",dg3:"",nxt:nxt,
+  ag1:nm+" isimli öğrenciye yönelik sınıf ve okul içerisinde alınabilecek tedbirlerin görüşülmesi",
+  ag2:"Öğrenci ve veli ile yapılması planlanan rehberlik ve psikolojik danışma çalışmalarının Psikolojik Danışman …………………… tarafından paylaşılması ve görüşlerin alınması",
+  ag3:"Tüm branş öğretmenlerinin öğrenciye ait eğitsel performanslarını sunması",
+  ag4:"Tüm branşlarda öğretmenlerin eğitsel performans önerilerinin incelenerek öğrencinin eğitim-öğretim planlarının görüşülmesi",
+  ag5:"Destek eğitim ihtiyacının görüşülmesi",
+  ag6:"Bir sonraki toplantı tarihinin görüşülmesi",
+  kr1:nm+" isimli öğrencide DEHB tanısı olduğu için sınıf öğretmeni tarafından ön sıraya oturtulmuştur. Oturma şeklinin tüm derslerde aynı şekilde devam etmesine karar verilmiştir.",
+  kr2:"Aile ile DEHB hakkında bilgilendirme çalışması yapılmış olup, aileyi destekleyici rehberlik çalışmalarının yıl boyunca devam etmesine karar verilmiştir. Bu çalışmalarda MEB’in hazırladığı içeriklerden faydalanılacağı Psikolojik Danışman ………………. tarafından belirtilmiştir.",
+  kr3:"Tüm branş öğretmenleri …. haftalık süreçte tespit ettikleri eğitsel performansları birime sunmuştur. Tüm birim üyelerince öğrencinin tüm derslerdeki eğitsel performansı incelenmiştir.",
+  kr4:"………………….., ………………………., ……………………….. derslerinden öğrenciye branş öğretmenleri …………………, ……………………………., ………………………. ’nın belirttiği kazanımlar esas alınarak bireyselleştirilmiş eğitim planı hazırlanmasına karar verilmiştir. Bu doğrultuda bu derslerin sınavlarının da bu plana uygun şekilde bireyselleştirilmiş olarak yapılmasına karar verilmiştir. ………………………, …………………… derslerinden öğrenciye bireyselleştirilmiş eğitim planı hazırlanmamasına ancak LGS’de de olduğu gibi okul sınavlarında da ek süre uygulaması yapılmasına bu sürenin 10dk olmasına karar verilmiştir.",
+  kr5:nm+" isimli öğrencinin destek eğitim odasında ……… saat ……… dersinden, …. saat ….. dersinden, …… saat …… dersinden, ……… saat ……. dersinden destek eğitim almasına karar verilmiştir.",
+  kr6:"BEP Geliştirme Biriminin bir sonraki toplantı tarihi "+nxt+" olarak belirlenmiştir."}}
+function fv(d,k,ed,rows){var v=d[k]||"";if(!ed)return'<div class="v">'+esc(v)+'</div>';return rows?'<textarea data-k="'+k+'" rows="'+rows+'">'+esc(v)+'</textarea>':'<input data-k="'+k+'" value="'+esc(v)+'">'}
+function formMarkup(s,n,d,ed){
+  var m=meetings[n===2?s.id+"_2":s.id];
+  var P=function(l,k){return'<tr><td>'+l+'</td><td>'+fv(d,k,ed)+'</td><td></td></tr>'};
+  var D=function(i){return'<tr><td>'+fv(d,'dg'+i+'g',ed)+'</td><td>'+fv(d,'dg'+i,ed)+'</td><td></td></tr>'};
+  var it=function(p,i){return'<div class="it"><b>'+i+'.</b>'+fv(d,p+i,ed,2)+'</div>'},ag="",kr="";
+  for(var i=1;i<=6;i++){ag+=it("ag",i);kr+=it("kr",i)}
+  return'<div class="paper"><h1>BEP TOPLANTISI</h1><table><tr><th>Adı Soyadı</th><td>'+esc(s.name)+'</td><th>Sınıf/No</th><td>'+esc(s.cls+" / "+s.no)+'</td><th>Toplantı Tarihi</th><td>'+dmy(m.date)+'</td></tr>'+
+  '<tr><th>Doğum Tarihi</th><td>'+fv(d,"dogum",ed)+'</td><th>Cinsiyeti</th><td>'+fv(d,"cin",ed)+'</td><th>Toplantı No</th><td>'+n+'</td></tr></table>'+
+  '<div class="cols"><div><h2>GÜNDEM</h2>'+ag+'<h2>ALINAN KARARLAR</h2>'+kr+'</div>'+
+  '<div><h2>BEP TOPLANTISINA KATILANLAR</h2><table class="kt"><tr><th>Görevi</th><th>Adı Soyadı</th><th>İmza</th></tr>'+
+  P("Anne/Baba","anne")+P("Sınıf Rehber Öğretmeni","srh")+P("Özel Eğitim Öğrt. (Varsa)","ozel")+P("Rehber Öğretmen / Psikolojik Danışman","rh1")+P("Rehber Öğretmen / Psikolojik Danışman","rh2")+P("BEP Geliştirme Birim Bşk.","bsk")+
+  '<tr><td colspan="3"><b>Diğer Katılımcılar*</b> (Görevi/Branşı)</td></tr>'+D(1)+D(2)+D(3)+'</table></div></div>'+
+  '<p class="nx"><b>Bir Sonraki BEP Toplantı Tarihi:</b>'+fv(d,"nxt",ed)+'</p></div>'}
+function autosize(t){t.style.height="auto";t.style.height=t.scrollHeight+"px"}
+function hashKey(){var m=/^#form-(s\d+)-([12])$/.exec(location.hash);return m?(m[2]==="2"?m[1]+"_2":m[1]):null}
+function openForm(key){var b=key.replace("_2","");view=key;flash=null;try{location.hash="form-"+b+"-"+(b!==key?2:1)}catch(e){}render();window.scrollTo(0,0)}
+function closeForm(){view=null;flash=null;try{location.hash=""}catch(e){}render()}
+window.addEventListener("hashchange",function(){if(!me)return;var k=hashKey();if(k&&!meetings[k])k=null;if(k!==view){view=k;flash=null;render()}});
+document.addEventListener("input",function(e){var t=e.target,k=t.dataset&&t.dataset.k;if(!view||!k)return;(FORMS[view]=FORMS[view]||{})[k]=t.value;if(t.tagName==="TEXTAREA")autosize(t)});
+async function loadForm(key){var saved={};try{if(fcol){var sn=await fcol.doc(key).get(),v=sn&&sn.data&&sn.data();if(v&&v.d)saved=v.d}}catch(e){}FORMS[key]=Object.assign({},saved,FORMS[key]||{});if(view===key)formView()}
+async function saveForm(){
+  try{if(!fcol){flash={c:"wa",t:"Ortak veri bağlantısı yok; değişiklikler yalnızca bu oturumda kalır."}}else{await fcol.doc(view).set({d:FORMS[view]||{},by:me,ts:Date.now()});flash={c:"ok",t:"Form kaydedildi."}}}
+  catch(e){flash={c:"er",t:"Form kaydedilemedi. Yazma yetkiniz olmayabilir."}}
+  formView();window.scrollTo(0,0)}
+async function printForm(s,n){
+  var dl=null;try{dl=await claude.use("downloads")}catch(e){}
+  if(!dl){flash={c:"wa",t:"Dosya indirme bu görünümde kullanılamıyor."};return formView()}
+  var d=Object.assign(defs(s,n),FORMS[view]||{});
+  var doc='<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><title>BEP Toplantısı</title><style>@page{size:A4;margin:10mm}body{margin:0;background:#fff}'+FORM_CSS+'.paper{border:0;max-width:none;padding:0}</style></head><body>'+formMarkup(s,n,d,false)+'<script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>';
+  try{await dl.save({filename:"BEP_Toplantisi_"+s.no+"_"+n+".html",data:doc});flash={c:"ok",t:"Dosya indirildi. Açtığınızda yazdırma penceresi otomatik açılır."}}catch(e){if(e&&e.code!=="declined")flash={c:"er",t:"Yazdırma dosyası oluşturulamadı."}}
+  formView()}
+function formView(){
+  var base=view.replace("_2",""),n=base!==view?2:1,s=S.filter(function(x){return x.id===base})[0],m=meetings[view];
+  if(!s||!m){view=null;return render()}
+  if(!LOADED[view]){LOADED[view]=1;loadForm(view)}
+  var d=Object.assign(defs(s,n),FORMS[view]||{});
+  app.innerHTML='<style>'+FORM_CSS+'</style><div class="top" style="margin-bottom:10px"><button class="g" id="fb">← Listeye dön</button><div style="display:flex;gap:8px"><button id="fs">Kaydet</button><button id="fp">🖨 Yazdır</button></div></div>'+(flash?'<div class="banner '+flash.c+'">'+esc(flash.t)+'</div>':'')+formMarkup(s,n,d,true);
+  app.querySelectorAll("textarea").forEach(autosize);
+  document.getElementById("fb").onclick=closeForm;
+  document.getElementById("fs").onclick=saveForm;
+  document.getElementById("fp").onclick=function(){printForm(s,n)}}
+
+function cell(s,key){
+  var n2=key!==s.id,m=meetings[key],f1=meetings[s.id],bad=rowErr[key],dis=n2&&!f1;
+  return '<td class="'+(bad?'bad':'')+'"><div style="display:flex;gap:6px;align-items:center"><input type="date" data-id="'+key+'" value="'+(m?m.date:'')+'" min="'+today()+'" max="'+LAST_DAY+'"'+(dis?' disabled':'')+'>'+(m?'<button class="g" data-form="'+key+'" title="BEP toplantı formu">📄</button><button class="g" data-clr="'+key+'">Sil</button>':'')+'</div>'+(dis?'<div class="sm">önce 1. toplantı</div>':'')+(bad?'<div class="msg">'+esc(bad)+'</div>':'')+(m&&!bad&&admin&&m.teacher?'<div class="sm">'+esc(m.teacher)+'</div>':'')+'</td>'}
+function render(){
+  if(!me)return loginView();
+  if(view)return formView();
+  var list=S.filter(function(s){return admin?(!filterT||s.t===filterT):s.t===me});
+  var mine=list.filter(function(s){return!s.st||s.st==="ulaşılamıyor"}),done=mine.filter(function(s){return meetings[s.id]}).length,done2=mine.filter(function(s){return meetings[s.id+"_2"]}).length;
+  var h='<div class="top"><div><h1>BEP Birim Toplantı Takvimi</h1><p class="sub">'+esc(me)+' · 1. toplantı: '+done+'/'+mine.length+' · 2. toplantı: '+done2+'/'+mine.length+'</p></div><div style="display:flex;gap:8px"><button id="prt">🖨 Yazdır</button><button class="g" id="out">Çıkış</button></div></div>';
+  h+='<div class="card"><b>2. toplantı otomatik atama</b><p class="sm" style="margin:6px 0 10px">1. toplantı tarihi girilmiş ve 2. toplantısı boş olan öğrenciler, 1. toplantı sırasına göre '+fmt(SEC_START)+' ile '+fmt(SEC_END)+' arasındaki iş günlerine (tatiller ve dolu günler hariç) yayılır. 2. toplantı, 1. toplantıdan en az '+MIN_GAP+' gün sonra olur. Atanan tarihleri satırdan değiştirebilirsiniz.</p><button id="auto">Boş olanlara otomatik ata</button></div>';
+  h+='<div class="card"><b>Tarih seçerken uyulacak kurallar</b><ul class="rules"><li>Aynı güne en fazla '+MAX_PER_DAY+' toplantı alınabilir; gün doluysa başka bir gün seçmeniz istenir.</li><li>Cumartesi, pazar ve resmi/okul tatili günleri seçilemez.</li><li>2. toplantı, 1. toplantıdan sonraki bir günde olmalıdır.</li><li>Seçilebilir aralık: bugün – '+fmt(LAST_DAY)+'.</li></ul></div>';
+  if(!shared)h+='<div class="banner wa" style="display:block">Ortak veri bağlantısı kurulamadı; kayıtlar yalnızca bu oturumda tutulur ve diğer öğretmenlerle paylaşılmaz.</div>';
+  if(flash)h+='<div class="banner '+flash.c+'">'+esc(flash.t)+'</div>';
+  if(admin)h+='<div class="card"><label style="margin-top:0">Öğretmene göre filtrele</label><select id="ft"><option value="">Tümü</option>'+TEACHERS.map(function(t){return"<option"+(t===filterT?" selected":"")+">"+esc(t)+"</option>"}).join("")+'</select></div>';
+  h+='<div class="card tw"><table><thead><tr><th>#</th><th>Ad Soyad</th><th>Sınıf</th><th>No</th>'+(admin?'<th>Öğretmen</th>':'')+'<th>1. Toplantı Tarihi</th><th>2. Toplantı Tarihi</th></tr></thead><tbody>';
+  list.forEach(function(s,i){
+    var off=s.st&&s.st!=="ulaşılamıyor";
+    h+='<tr><td>'+(i+1)+'</td><td class="n">'+esc(s.name)+'<div class="sm">'+esc(s.grp)+(s.st==="ulaşılamıyor"?' · <span class="tag wa">ulaşılamıyor</span>':'')+'</div></td><td>'+esc(s.cls)+'</td><td>'+esc(s.no)+'</td>'+(admin?'<td class="sm">'+esc(s.t)+'</td>':'');
+    if(off)h+='<td colspan="2"><span class="tag">'+esc(s.st)+' – toplantı girilemez</span></td></tr>';
+    else h+=cell(s,s.id)+cell(s,s.id+"_2")+'</tr>'});
+  h+='</tbody></table></div>';
+  var cnt={};for(var k in meetings){cnt[meetings[k].date]=(cnt[meetings[k].date]||0)+1}
+  var ds=Object.keys(cnt).sort().filter(function(d){return d>=today()});
+  if(ds.length)h+='<div class="card"><b>Günlük doluluk</b><div class="days">'+ds.map(function(d){var f=cnt[d]>=MAX_PER_DAY;return'<span class="tag '+(f?'wa':'ok')+'">'+fmt(d).replace(/ \S+$/,'')+' · '+cnt[d]+'/'+MAX_PER_DAY+(f?' dolu':'')+'</span>'}).join("")+'</div></div>';
+  var pr='<div class="printonly"><h2>BEP Birim Toplantı Listesi</h2><p>'+(admin?esc(filterT||'Tüm öğretmenler'):esc(me))+' · Yazdırma tarihi: '+fmt(today())+'</p><table class="pt"><thead><tr><th>#</th><th>Ad Soyad</th><th>Sınıf</th><th>No</th>'+(admin?'<th>Öğretmen</th>':'')+'<th>1. Toplantı</th><th>2. Toplantı</th></tr></thead><tbody>'+list.map(function(s,i){var a=meetings[s.id],b=meetings[s.id+"_2"],off=s.st&&s.st!=="ulaşılamıyor";return'<tr><td>'+(i+1)+'</td><td>'+esc(s.name)+'</td><td>'+esc(s.cls)+'</td><td>'+esc(s.no)+'</td>'+(admin?'<td>'+esc(s.t)+'</td>':'')+(off?'<td colspan="2">'+esc(s.st)+'</td>':'<td>'+(a?fmt(a.date):'—')+'</td><td>'+(b?fmt(b.date):'—')+'</td>')+'</tr>'}).join('')+'</tbody></table></div>';
+  app.innerHTML=h+pr;
+  document.getElementById("out").onclick=function(){view=null;me=null;admin=false;filterT="";flash=null;rowErr={};render()};
+  var ft=document.getElementById("ft");if(ft)ft.onchange=function(){filterT=ft.value;render()};
+  app.querySelectorAll("input[type=date]").forEach(function(i){i.onchange=function(){if(i.value)save(i.dataset.id,i.value);else clearDate(i.dataset.id)}});
+  app.querySelectorAll("[data-clr]").forEach(function(b){b.onclick=function(){clearDate(b.dataset.clr)}});
+  app.querySelectorAll("[data-form]").forEach(function(b){b.onclick=function(){openForm(b.dataset.form)}});
+  var au=document.getElementById("auto");if(au)au.onclick=function(){autoAssign(list)};
+  document.getElementById("prt").onclick=async function(){
+    var dl=null;try{dl=await claude.use("downloads")}catch(e){}
+    if(!dl){flash={c:"wa",t:"Dosya indirme bu görünümde kullanılamıyor. Tarayıcının üst menüsündeki dışa aktar seçeneğini kullanabilirsiniz."};render();return}
+    var doc='<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><title>BEP Birim Toplantı Listesi</title><style>body{font:13px system-ui,sans-serif;margin:16px;color:#000;background:#fff}h2{margin:0 0 4px}p{margin:0 0 10px;font-size:12px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #444;padding:5px 6px;text-align:left}th{background:#e8e8e8}tr{break-inside:avoid}.printonly{display:block}</style></head><body>'+pr+'<script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>';
+    try{await dl.save({filename:"BEP_Toplanti_Listesi.html",data:doc});flash={c:"ok",t:"Dosya indirildi. Açtığınızda yazdırma penceresi otomatik açılır."}}catch(e){if(e&&e.code!=="declined")flash={c:"er",t:"Yazdırma dosyası oluşturulamadı."}}
+    render()}}
+
+render();
+// Ortak veri (tüm öğretmenlerin aynı günü görmesi için)
+(function(){var t=setTimeout(function(){},10000);
+ if(!window.claude||!claude.use)return;
+ claude.use("db").then(function(db){clearTimeout(t);if(!db)return;
+  col=db.collection("meetings");fcol=db.collection("forms");shared=true;
+  col.onSnapshot(function(snap){var m={};snap.docs.forEach(function(d){var v=d.data();if(v&&v.date)m[d.id]=v});meetings=m;render()},function(){shared=false;col=null;render()});
+  render()}).catch(function(){})})();
+</script>
+</body>
+</html>
