@@ -111,7 +111,7 @@ var RAW=[
 "Kaynaştırma|SELEN ÜSTÜNÇAĞ|4 / F|240|SELÇUK TOPÇUOĞLU|",
 "Kaynaştırma|ESMA SULTAN CEBESOY|4 / F|1250|SELÇUK TOPÇUOĞLU|",
 "Kaynaştırma|DOĞA DALKILIÇ|Ana / B|1062|GÜLGÜN TOPAK|",
-"Kaynaştırma|ERRIM DÖNMEZ|Ana / C|1043|BURCU GÜLER|",
+"Kaynaştırma|ERİM DÖNMEZ|Ana / C|1043|BURCU GÜLER|",
 "RAM Kademe Farkı|MİRAÇ EFE ŞAHAN|1 / C|334|GÜLER MURATOĞLU|ulaşılamıyor",
 "RAM Kademe Farkı|ŞAKİR TALHA GÖKÇE|1 / F|577|DURAN KARADAĞ|ulaşılamıyor",
 "RAM Kademe Farkı|NECATİCAN YAVUZ|2 / F|989|YAŞAM DEMİRCİOĞLU|",
@@ -160,7 +160,7 @@ function save(sid,d){
  var s=S.filter(function(x){return x.id===base})[0];
  var err=check(d,sid);
  if(!err&&n2&&!meetings[base])err="Önce 1. toplantı tarihini girin.";
- if(err){rowErr[sid]=err;flash={c:"er",t:s.name+": "+err};render();return}
+if(err){rowErr[sid]=err;flash={c:"er",t:s.name+": "+err};render();return}
 delete rowErr[sid];
 var rec={sid:sid,date:d,teacher:me,ts:Date.now()};
 database.ref('meetings/' + sid).set(rec)
@@ -220,7 +220,7 @@ el.map(function(s){
 var m1=meetings[s.id], m2=meetings[s.id+"_2"];
 var d1=m1?m1.date:"", d2=m2?m2.date:"";
 var err1=rowErr[s.id]?''+esc(rowErr[s.id])+'':"";
-var err2=rowErr[s.id+"_2"]?''+esc(rowErr[s.id+"_2"]) Mandat+'':"";
+var err2=rowErr[s.id+"_2"]?''+esc(rowErr[s.id+"_2"])+'':"";
 var b1=d1?'✓ Planlandı Form X':"";
 var b2=d2?'✓ Planlandı Form X':"";
 return ''+esc(s.grp)+''+esc(s.name)+(s.st?' '+esc(s.st)+'':"")+''+esc(s.cls+" / "+s.no)+''+esc(s.t)+''+
@@ -272,7 +272,7 @@ kr1:nm+" isimli öğrencide DEHB tanısı olduğu için sınıf öğretmeni tara
 kr2:"Aile ile DEHB hakkında bilgilendirme çalışması yapılmış olup, aileyi destekleyici rehberlik çalışmalarının yıl boyunca devam etmesine karar verilmiştir. Bu çalışmalarda MEB'in hazırladığı içeriklerden faydalanılacağı Psikolojik Danışman ………………. tarafından belirtilmiştir.",
 kr3:"Tüm branş öğretmenleri …. haftalık süreçte tespit ettikleri eğitsel performansları birime sunmuştur. Tüm birim üyelerince öğrencinin tüm derslerdeki eğitsel performansı incelenmiştir.",
 kr4:"………………….., ………………………., ……………………….. derslerinden öğrenciye branş öğretmenleri …………………, ……………………………., ………………………. 'nın belirttiği kazanımlar esas alınarak bireyselleştirilmiş eğitim planı hazırlanmasına karar verilmiştir. Bu doğrultuda bu derslerin sınavlarının da bu plana uygun şekilde bireyselleştirilmiş olarak yapılmasına karar verilmiştir. ………………………, …………………… derslerinden öğrenciye bireyselleştirilmiş eğitim planı hazırlanmamasına ancak LGS'de de olduğu gibi okul sınavlarında da ek süre uygulaması yapılmasına bu sürenin 10dk olmasına karar verilmiştir.",
-kr5:nm+" isimli öğrencinin destek eğitim odasında ……… saat ……… dersinden, …. saat ….. dersinden, …… saat …… dersinden, ……… saat ……. dersinden destek eğitim almasına karar verilmiştir.",
+kr5:nm+" isimli öğrencinin destek eğitim odasında ……ß saat ……… dersinden, …. saat ….. dersinden, …… saat …… dersinden, ……… saat ……. dersinden destek eğitim almasına karar verilmiştir.",
 kr6:"BEP Geliştirme Biriminin bir sonraki toplantı tarihi "+nxt+" olarak belirlenmiştir."}}
 function fv(d,k,ed,rows){
 var v=d[k]||"";
@@ -325,11 +325,9 @@ flash={c:"ok",t:"Form buluta başarıyla kaydedildi."};
 formView();
 })
 .catch(function(){
-flash={c:"er",t:"Form kaydedilirken hata oluştu."};
+flash={c:"er",t:"Form kaydedilerken hata oluştu."};
 formView();
 });
 }
 function render(){if(!me)loginView();else if(view)formView();else mainView()}
 render();
-
-
