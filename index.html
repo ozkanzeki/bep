@@ -100,6 +100,47 @@ var RAW=[
 "RAM Kademe Farkı|HAMZA DORUK DEMİR|3 / D|116|SİNEM DEMİR TEK|"];
 var S=RAW.map(function(r,i){var p=r.split("|");return{id:"s"+(i+1),grp:p[0],name:p[1],cls:p[2],no:p[3],t:p[4],st:p[5]}});
 var TEACHERS=[];S.forEach(function(s){if(TEACHERS.indexOf(s.t)<0)TEACHERS.push(s.t)});TEACHERS.sort(function(a,b){return a.localeCompare(b,"tr")});
+<!-- Firebase Kütüphaneleri (CDN) -->
+<script src="https://gstatic.com"></script>
+<script src="https://gstatic.com"></script>
+
+<script>
+// Görseldeki Firebase Bilgileriniz
+const firebaseConfig = {
+  apiKey: "AIzaSyCslp5R1bB-2phsjOXh3MNoA87HnS_Q35Y",
+  authDomain: "beptakvim.firebaseapp.com",
+  databaseURL: "https://firebasedatabase.app",
+  projectId: "beptakvim",
+  storageBucket: "beptakvim.firebasestorage.app",
+  messagingSenderId: "85085338383",
+  appId: "1:85085338383:web:f1306cd923b0a5b21f7bea"
+};
+
+// Firebase'i Başlat
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+// Veritabanından Seçilen Tarihleri Çekme Fonksiyonu
+function verileriYukle() {
+  database.ref('toplantilar').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      meetings = data;
+      if (typeof render === "function") render(); // Sayfayı anlık güncellemesi için
+    }
+  });
+}
+
+// Tarih Değiştiğinde Veritabanına Kaydetme Fonksiyonu
+function tarihKaydet(ogrenciId, toplantiNo, tarih) {
+  database.ref('toplantilar/' + ogrenciId + '/' + toplantiNo).set(tarih)
+    .then(() => { console.log("Seçim kaydedildi."); })
+    .catch((error) => { alert("Kayıt hatası: " + error.message); });
+}
+
+// Sayfa açıldığında verileri çekmeye başla
+verileriYukle();
+</script>
 
 // ---- DURUM ----
 var me=null, admin=false, meetings={}, col=null, shared=false, flash=null, rowErr={}, filterT="", tab=1;
