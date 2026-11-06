@@ -127,7 +127,8 @@ var app=document.getElementById("app");
 // ---- BULUT ----
 database.ref('meetings').on('value', function(snap){
   meetings = snap.val() || {};
-  if(!view) render();
+  var ae=document.activeElement;
+  if(!view && !(ae && ae.type==='date')) render();   // takvim açıkken yeniden çizme
 });
 database.ref('forms').on('value', function(snap){
   if(!view) FORMS = snap.val() || {};   // form açıkken yazılan metni ezme
@@ -322,7 +323,8 @@ function mainView(){
 function dateCell(sid,m,enabled){
   var d=m?m.date:"",err=rowErr[sid];
   return '<td class="'+(err?"bad":"")+'"><div class="cell">'+
-  '<input type="date" value="'+d+'"'+(enabled?'':' disabled')+' onchange="save(\''+sid+'\',this.value)">'+
+  '<input type="date" value="'+d+'"'+(enabled?'':' disabled')+' onchange="if(this.value)this.nextElementSibling.style.display=\'\'">'+
+  '<button style="display:none" onclick="var v=this.previousElementSibling.value;if(v)save(\''+sid+'\',v)">Kaydet</button>'+
   (d?'<button class="g" onclick="openForm(\''+sid+'\')">Form</button><button class="g" onclick="clearDate(\''+sid+'\')">Sil</button>':'')+
   '</div>'+(err?'<div class="msg">'+esc(err)+'</div>':'')+'</td>';
 }
