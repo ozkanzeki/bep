@@ -279,7 +279,7 @@ function formMarkup(s,n,d,ed){
   '<table>'+
   '<tr><th>Öğrencinin Adı Soyadı</th><td>'+esc(s.name)+'</td><th>Tutanak No / Dönem</th><td>'+n+'. Toplantı / '+(n===1?1:2)+'. Dönem</td></tr>'+
   '<tr><th>Sınıfı / Okul No</th><td>'+esc(s.cls+" / "+s.no)+'</td><th>Toplantı Tarihi / Saati</th><td>'+dmy(mDate)+' / .........</td></tr>'+
-  '<tr><th>Toplantı Yeri</th><td>'+selv(d,"yer",ed,["Rehberlik Servisi","İdare Odası"])+'</td><th>Grup</th><td>'+esc(s.grp)+'</td></tr>'+
+  '<tr><th>Toplantı Yeri</th><td colspan="3">'+selv(d,"yer",ed,["Rehberlik Servisi","İdare Odası"])+'</td></tr>'+
   '<tr><th>Tanı (Yetersizlik Alanı)</th><td colspan="3">'+fv(d,"tani",ed,2)+'</td></tr>'+
   '</table>'+
   '<div class="cols"><div><h2>GÜNDEM MADDELERİ</h2>'+ag+'</div><div><h2>ALINAN KARARLAR</h2>'+kr+'</div></div>'+
