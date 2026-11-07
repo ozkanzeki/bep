@@ -280,7 +280,7 @@ function fv(d,k,ed,rows){
 function formMarkup(s,n,d,ed){
   var m=meetings[n===1?s.id:s.id+"_"+n], mDate=m?m.date:"";
   var P=function(l,k,r){return '<tr><td>'+l+'</td><td>'+(r?fsel(d,k,ed,r):fv(d,k,ed))+'</td><td></td></tr>'};
-  var D=function(i){return '<tr><td>'+fv(d,'dg'+i+'g',ed)+'</td><td>'+fsel(d,'dg'+i,ed,'brans')+'</td><td></td></tr>'};
+  var D=function(i){return '<tr><td>'+fv(d,'dg'+i+'g',ed)+'</td><td>'+fv(d,'dg'+i,ed)+'</td><td></td></tr>'};
   var it=function(p,i){return '<div class="it"><b>'+i+'.</b>'+fv(d,p+i,ed,2)+'</div>'},ag="",kr="";
   for(var i=1;i<=6;i++){ag+=it("ag",i);kr+=it("kr",i)}
   var nd=Math.max(3,membersFor(s).br.length),dr="";for(var j=1;j<=nd;j++)dr+=D(j);
@@ -325,14 +325,6 @@ document.addEventListener("input",function(e){
   var t=e.target,k=t.dataset&&t.dataset.k;if(!view||!k)return;
   (FORMS[view]=FORMS[view]||{})[k]=t.value;
   if(t.tagName==="TEXTAREA")autosize(t);
-  if(t.tagName==="SELECT"&&/^dg\d+$/.test(k)){
-    var m=Object.keys(MEM).map(function(x){return MEM[x]}).filter(function(x){return x.role==="brans"&&x.name===t.value})[0];
-    if(m||!t.value){
-      var g=m?(m.branch||"Branş")+" Öğretmeni":"";
-      FORMS[view][k+"g"]=g;
-      var gi=document.querySelector('.paper input[data-k="'+k+'g"]');if(gi)gi.value=g;
-    }
-  }
 });
 
 function saveForm(){
@@ -421,8 +413,8 @@ function memView(){
   var h='<h1 style="font-size:15px">'+(editM?"Üyeyi Düzenle":"Yeni Üye Ekle")+'</h1>'+
   '<div class="sub">Burada tanımlanan üyeler, öğrencinin sınıfına göre tutanak formuna otomatik yerleşir.</div>'+
   '<div id="mf"><label style="margin-top:0">Ad Soyad</label><input id="mn" value="'+esc(e.name)+'">'+
-  '<label>Görevi</label><select id="mr" onchange="roleCh()">'+Object.keys(ROLES).map(function(k){return'<option value="'+k+'"'+(e.role===k?" selected":"")+'>'+ROLES[k]+'</option>'}).join("")+'</select>'+
-  '<div id="mbw" style="display:'+(e.role==="brans"?"block":"none")+'"><label>Branşı (ör. Matematik)</label><input id="mb" value="'+esc(e.branch||"")+'"></div>'+
+  '<label>Görevi</label><div class="chips">'+Object.keys(ROLES).map(function(k){return'<label class="chip"><input type="radio" name="mr" value="'+k+'"'+(e.role===k?" checked":"")+' onchange="roleCh()">'+ROLES[k]+'</label>'}).join("")+'</div>'+
+  '<div id="mbw" style="display:'+(e.role==="brans"?"block":"none")+'"><label>Branşı (ör. Matematik, Türkçe, Fen Bilimleri)</label><input id="mb" value="'+esc(e.branch||"")+'"></div>'+
   '<label>Girdiği sınıflar <span class="sm">(Birim başkanında boş bırakılırsa tüm sınıflar için geçerli olur)</span></label>'+
   '<div class="chips">'+CLASSES.map(function(c){return'<label class="chip"><input type="checkbox" value="'+esc(c)+'"'+(cl.indexOf(c)>=0?" checked":"")+'>'+esc(c)+'</label>'}).join("")+'</div>'+
   '<div class="bar" style="margin-top:12px"><button onclick="saveMember()">'+(editM?"Güncelle":"Ekle")+'</button>'+
@@ -437,12 +429,13 @@ function memView(){
     '<td><div class="cell"><button class="g" onclick="editMember(\''+id+'\')">Düzenle</button><button class="g" onclick="delMember(\''+id+'\')">Sil</button></div></td></tr>';
   }).join("")+'</table>';
 }
-function roleCh(){document.getElementById("mbw").style.display=document.getElementById("mr").value==="brans"?"block":"none"}
+function curRole(){var r=document.querySelector("#mf input[name=mr]:checked");return r?r.value:"rehber"}
+function roleCh(){document.getElementById("mbw").style.display=curRole()==="brans"?"block":"none"}
 function selAll(on){document.querySelectorAll("#mf .chip input").forEach(function(c){c.checked=on})}
 function editMember(id){editM=id;flash=null;render()}
 function delMember(id){if(confirm("Bu üye silinsin mi?"))database.ref("members/"+id).remove()}
 function saveMember(){
-  var name=document.getElementById("mn").value.trim(),role=document.getElementById("mr").value,br=document.getElementById("mb").value.trim();
+  var name=document.getElementById("mn").value.trim(),role=curRole(),br=document.getElementById("mb").value.trim();
   var cls=[].slice.call(document.querySelectorAll("#mf .chip input:checked")).map(function(c){return c.value});
   if(!name){alert("Lütfen ad soyad girin.");return}
   if(role==="brans"&&!br){alert("Branş öğretmeni için branş girin.");return}
