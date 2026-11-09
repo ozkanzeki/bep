@@ -242,7 +242,7 @@ function fsel(d,k,ed,role){
   if(!ed)return '<span class="v">'+esc(v)+'</span>';
   var L=Object.keys(MEM).map(function(x){return MEM[x]}).filter(function(m){return m.role===role})
     .sort(function(a,b){return((a.branch||"")+a.name).localeCompare((b.branch||"")+b.name,"tr")});
-  var found=false,o=L.map(function(m){if(m.name===v)found=true;return '<option value="'+esc(m.name)+'"'+(m.name===v?' selected':'')+'>'+esc(m.name+(m.branch?' ('+m.branch+')':''))+'</option>'}).join('');
+  var found=false,o=L.map(function(m){var lb=m.name+(m.branch?' ('+m.branch+')':'');if(lb===v)found=true;return '<option value="'+esc(lb)+'"'+(lb===v?' selected':'')+'>'+esc(lb)+'</option>'}).join('');
   if(v&&!found)o+='<option value="'+esc(v)+'" selected>'+esc(v)+'</option>';
   return '<select data-k="'+k+'"><option value=""></option>'+o+'</select>';
 }
@@ -267,7 +267,7 @@ function defs(s,n){
   kr4:"………………….., ………………………., ……………………….. derslerinden öğrenciye branş öğretmenleri …………………, ……………………………., ………………………. 'nın belirttiği kazanımlar esas alınarak bireyselleştirilmiş eğitim planı hazırlanmasına karar verilmiştir. Bu doğrultuda bu derslerin sınavlarının da bu plana uygun şekilde bireyselleştirilmiş olarak yapılmasına karar verilmiştir. ………………………, …………………… derslerinden öğrenciye bireyselleştirilmiş eğitim planı hazırlanmamasına ancak LGS'de de olduğu gibi okul sınavlarında da ek süre uygulaması yapılmasına bu sürenin 10dk olmasına karar verilmiştir.",
   kr5:nm+" isimli öğrencinin destek eğitim odasında …… saat ……… dersinden, …. saat ….. dersinden, …… saat …… dersinden, ……… saat ……. dersinden destek eğitim almasına karar verilmiştir.",
   kr6:"BEP Geliştirme Biriminin bir sonraki toplantı tarihi "+nxt+" olarak belirlenmiştir."};
-  M.br.forEach(function(m,i){o["dg"+(i+1)+"g"]=(m.branch||"Branş")+" Öğretmeni";o["dg"+(i+1)]=m.name});
+  M.br.forEach(function(m,i){o["bo"+(i+1)]=m.name+(m.branch?" ("+m.branch+")":"")});
   return o}
 
 function fv(d,k,ed,rows){
@@ -283,7 +283,9 @@ function formMarkup(s,n,d,ed){
   var D=function(i){return '<tr><td>'+fv(d,'dg'+i+'g',ed)+'</td><td>'+fv(d,'dg'+i,ed)+'</td><td></td></tr>'};
   var it=function(p,i){return '<div class="it"><b>'+i+'.</b>'+fv(d,p+i,ed,2)+'</div>'},ag="",kr="";
   for(var i=1;i<=6;i++){ag+=it("ag",i);kr+=it("kr",i)}
-  var nd=Math.max(3,membersFor(s).br.length),dr="";for(var j=1;j<=nd;j++)dr+=D(j);
+  var nb=Math.max(1,membersFor(s).br.length),bo="",dr="";
+  for(var j=1;j<=nb;j++)bo+='<tr><td>Branş Öğretmeni</td><td>'+fsel(d,'bo'+j,ed,'brans')+'</td><td></td></tr>';
+  for(var j=1;j<=3;j++)dr+=D(j);
   var tm=ed?'<span style="display:inline-block;width:100px"><input type="time" data-k="saat" value="'+esc(d.saat||"12:20")+'"></span>':esc(d.saat||"12:20");
   return '<div class="hd"><img src="'+LOGO+'" alt="Okul logosu"><h1>BEP GELİŞTİRME BİRİMİ<br>TOPLANTI TUTANAĞI</h1></div>'+
   '<table>'+
@@ -296,7 +298,7 @@ function formMarkup(s,n,d,ed){
   '<h2>BEP GELİŞTİRME BİRİMİ ÜYELERİ</h2>'+
   '<table class="kt"><tr><th>Görevi / Branşı</th><th>Adı Soyadı</th><th>İmzası</th></tr>'+
   P("Birim Başkanı (Müdür/Müdür Yrd.)","bsk","baskan")+P("Sınıf Öğretmeni / Sınıf Rehber Öğrt.","srh")+P("Rehber Öğretmen / Psikolojik Danışman","rh1","rehber")+
-  P("Rehber Öğretmen / Psikolojik Danışman","rh2","rehber")+P("Özel Eğitim Öğretmeni (Varsa)","ozel")+P("Öğrenci Velisi (Anne/Baba)","anne")+
+  P("Rehber Öğretmen / Psikolojik Danışman","rh2","rehber")+P("Özel Eğitim Öğretmeni (Varsa)","ozel")+bo+P("Öğrenci Velisi (Anne/Baba)","anne")+
   dr+'</table>'+
   '<p class="nx"><b>Bir Sonraki Toplantı Tarihi:</b> '+fv(d,"nxt",ed)+'</p>';
 }
