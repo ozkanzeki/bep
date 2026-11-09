@@ -251,7 +251,8 @@ function selv(d,k,ed,opts){
   if(!ed)return '<span class="v">'+esc(v)+'</span>';
   return '<select data-k="'+k+'">'+opts.map(function(o){return '<option'+(o===v?' selected':'')+'>'+o+'</option>'}).join('')+'</select>';
 }
-function defs(s,n){
+function defs(s,n,tani){
+  var tn=tani||s.dx||s.grp;
   var nx=n===1?meetings[s.id+"_2"]:(n===2&&NEED3[s.id]?meetings[s.id+"_3"]:null),nm=s.name,k=s.grp==="Kaynaştırma"||s.grp==="RAM Kademe Farkı",nxt=nx?dmy(nx.date,"/"):"…../……/202….";
   var M=membersFor(s),pd=M.rh.length?M.rh.map(function(m){return m.name}).join(", "):"……………………";
   var o={tani:s.dx||s.grp,anne:"",srh:k?s.t:"",ozel:k?"":s.t,rh1:M.rh[0]?M.rh[0].name:"",rh2:M.rh[1]?M.rh[1].name:"",bsk:M.bsk.length?M.bsk[0].name:"",dg1g:"",dg1:"",dg2g:"",dg2:"",dg3g:"",dg3:"",nxt:nxt,
@@ -261,10 +262,10 @@ function defs(s,n){
   ag4:"Tüm branşlarda öğretmenlerin eğitsel performans önerilerinin incelenerek öğrencinin eğitim-öğretim planlarının görüşülmesi",
   ag5:"Destek eğitim ihtiyacının görüşülmesi",
   ag6:"Bir sonraki toplantı tarihinin görüşülmesi",
-  kr1:nm+" isimli öğrencide DEHB tanısı olduğu için sınıf öğretmeni tarafından ön sıraya oturtulmuştur. Oturma şeklinin tüm derslerde aynı şekilde devam etmesine karar verilmiştir.",
-  kr2:"Aile ile DEHB hakkında bilgilendirme çalışması yapılmış olup, aileyi destekleyici rehberlik çalışmalarının yıl boyunca devam etmesine karar verilmiştir. Bu çalışmalarda MEB'in hazırladığı içeriklerden faydalanılacağı Psikolojik Danışman "+pd+" tarafından belirtilmiştir.",
+  kr1:nm+" isimli öğrencide "+tn+" tanısı olduğu için sınıf öğretmeni tarafından ön sıraya oturtulmuştur. Oturma şeklinin tüm derslerde aynı şekilde devam etmesine karar verilmiştir.",
+  kr2:"Aile ile "+tn+" hakkında bilgilendirme çalışması yapılmış olup, aileyi destekleyici rehberlik çalışmalarının yıl boyunca devam etmesine karar verilmiştir. Bu çalışmalarda MEB'in hazırladığı içeriklerden faydalanılacağı Psikolojik Danışman "+pd+" tarafından belirtilmiştir.",
   kr3:"Tüm branş öğretmenleri …. haftalık süreçte tespit ettikleri eğitsel performansları birime sunmuştur. Tüm birim üyelerince öğrencinin tüm derslerdeki eğitsel performansı incelenmiştir.",
-  kr4:"………………….., ………………………., ……………………….. derslerinden öğrenciye branş öğretmenleri …………………, ……………………………., ………………………. 'nın belirttiği kazanımlar esas alınarak bireyselleştirilmiş eğitim planı hazırlanmasına karar verilmiştir. Bu doğrultuda bu derslerin sınavlarının da bu plana uygun şekilde bireyselleştirilmiş olarak yapılmasına karar verilmiştir. ………………………, …………………… derslerinden öğrenciye bireyselleştirilmiş eğitim planı hazırlanmamasına ancak LGS'de de olduğu gibi okul sınavlarında da ek süre uygulaması yapılmasına bu sürenin 10dk olmasına karar verilmiştir.",
+  kr4:k?"………………….., ………………………., ……………………….. derslerinden öğrenciye branş öğretmenleri …………………, ……………………………., ………………………. 'nın belirttiği kazanımlar esas alınarak bireyselleştirilmiş eğitim planı hazırlanmasına karar verilmiştir. Bu doğrultuda bu derslerin sınavlarının da bu plana uygun şekilde bireyselleştirilmiş olarak yapılmasına karar verilmiştir. ………………………, …………………… derslerinden öğrenciye bireyselleştirilmiş eğitim planı hazırlanmamasına ancak okul sınavlarında ek süre uygulaması yapılmasına bu sürenin 10dk olmasına karar verilmiştir.":"Özel eğitim sınıfı öğrencisi olduğundan dolayı branş öğretmenleri BEP hazırlamamıştır.",
   kr5:nm+" isimli öğrencinin destek eğitim odasında …… saat ……… dersinden, …. saat ….. dersinden, …… saat …… dersinden, ……… saat ……. dersinden destek eğitim almasına karar verilmiştir.",
   kr6:"BEP Geliştirme Biriminin bir sonraki toplantı tarihi "+nxt+" olarak belirlenmiştir."};
   M.br.forEach(function(m,i){o["bo"+(i+1)]=m.name+(m.branch?" ("+m.branch+")":"")});
@@ -306,11 +307,11 @@ function formMarkup(s,n,d,ed){
 function formView(){
   var b=baseOf(view), n=numOf(view);
   var s=S.filter(function(x){return x.id===b})[0];
-  var d=Object.assign(defs(s,n),FORMS[view]||{});
+  var d=Object.assign(defs(s,n,(FORMS[view]||{}).tani),FORMS[view]||{});
   var fl=flash?'<div class="banner '+flash.c+'">'+esc(flash.t)+'</div>':"";
   app.innerHTML='<style>'+FORM_CSS+'</style>'+
   '<div class="card top"><div><h1>Form Düzenleme: '+esc(s.name)+'</h1><div class="sub">'+n+'. Toplantı Formu</div></div>'+
-  '<div class="cell"><button onclick="saveForm()">Değişiklikleri Kaydet</button> <button onclick="window.print()">Yazdır / PDF Yap</button> <button class="g" onclick="closeForm()">Geri Dön</button></div></div>'+
+  '<div class="cell"><button onclick="saveForm()">Değişiklikleri Kaydet</button> <button onclick="printForm()">Yazdır / PDF Yap</button> <button class="g" onclick="closeForm()">Geri Dön</button></div></div>'+
   fl+
   '<div class="paper">'+formMarkup(s,n,d,true)+'</div>'+
   '<div class="printonly"><div class="paper">'+formMarkup(s,n,d,false)+'</div></div>';
@@ -327,7 +328,22 @@ document.addEventListener("input",function(e){
   var t=e.target,k=t.dataset&&t.dataset.k;if(!view||!k)return;
   (FORMS[view]=FORMS[view]||{})[k]=t.value;
   if(t.tagName==="TEXTAREA")autosize(t);
+  if(k==="tani"){
+    var sx=S.filter(function(x){return x.id===baseOf(view)})[0],dd=defs(sx,numOf(view),t.value);
+    ["kr1","kr2"].forEach(function(q){
+      if(FORMS[view][q]!==undefined)return;   // elle değiştirilmişse dokunma
+      var el=document.querySelector('.paper textarea[data-k="'+q+'"]');
+      if(el){el.value=dd[q];autosize(el)}
+    });
+  }
 });
+
+function printForm(){
+  var b=baseOf(view),n=numOf(view),s=S.filter(function(x){return x.id===b})[0],f=FORMS[view]||{};
+  var d=Object.assign(defs(s,n,f.tani),f),el=document.querySelector(".printonly .paper");
+  if(el)el.innerHTML=formMarkup(s,n,d,false);   // yazdırma kopyasını güncel değerlerle yenile
+  window.print();
+}
 
 function saveForm(){
   database.ref('forms/'+view).set(FORMS[view]||{})
