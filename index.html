@@ -35,6 +35,7 @@ th{background:var(--hd);text-align:left;font-size:11px;font-weight:500;text-tran
 td{padding:8px;border-top:1px solid var(--bd);vertical-align:middle}
 .sm{font-size:12px;color:var(--mu)}
 td input[type=date]{min-width:150px;padding:7px}
+td input[type=time]{width:105px;padding:7px}
 td.bad input{border-color:var(--er)}.msg{font-size:12px;color:var(--er);margin-top:3px}
 .tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:99px;background:var(--hd);color:var(--mu)}
 .tag.ok{background:var(--okb);color:var(--ok)}.tag.er{background:var(--erb);color:var(--er)}
@@ -140,9 +141,9 @@ database.ref('meetings').on('value', function(snap){
 });
 database.ref('need3').on('value', function(snap){ NEED3 = snap.val() || {}; softRender(); });
 database.ref('members').on('value', function(snap){ MEM = snap.val() || {}; softRender(); });
-function softRender(){var ae=document.activeElement,mf=document.getElementById('mf');if(!view && !(ae && ae.type==='date') && !(mf && mf.contains(ae))) render()}   // takvim açıkken yeniden çizme
+function softRender(){var ae=document.activeElement,mf=document.getElementById('mf');if(!view && !(ae && (ae.type==='date'||ae.type==='time')) && !(mf && mf.contains(ae))) render()}   // takvim açıkken yeniden çizme
 database.ref('forms').on('value', function(snap){
-  if(!view) FORMS = snap.val() || {};   // form açıkken yazılan metni ezme
+  if(!view){ FORMS = snap.val() || {}; softRender(); }   // form açıkken yazılan metni ezme
 });
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
@@ -166,7 +167,8 @@ function check(d,sid){
   return null;
 }
 
-function save(sid,d){
+function save(sid,d,tm){
+  tm=tm||'12:20';
   if(!d){clearDate(sid);return}
   var base=baseOf(sid),n=numOf(sid),m1=meetings[base],m2=meetings[base+"_2"];
   var s=S.filter(function(x){return x.id===base})[0];
@@ -182,8 +184,9 @@ function save(sid,d){
   }
   if(err){rowErr[sid]=err;flash={c:"er",t:s.name+": "+err};render();return}
   delete rowErr[sid];
-  flash={c:"ok",t:s.name+" için BEP "+n+". birim toplantısı "+fmt(d)+" olarak kaydedildi."};
-  database.ref('meetings/'+sid).set({sid:sid,date:d,teacher:me,ts:Date.now()})
+  flash={c:"ok",t:s.name+" için BEP "+n+". birim toplantısı "+fmt(d)+" olarak kaydedildi (saat "+tm+")."};
+  if(FORMS[sid])delete FORMS[sid].saat;database.ref('forms/'+sid+'/saat').remove();   // saat artık listeden gelir
+  database.ref('meetings/'+sid).set({sid:sid,date:d,time:tm,teacher:me,ts:Date.now()})
   .catch(function(){flash={c:"er",t:"Bulut veri tabanına kayıt yapılamadı."};render()});
 }
 
@@ -216,7 +219,7 @@ function autoAssign2(){
     var min=addDays(tmp[s.id].date,MIN_GAP),c=win.filter(function(x){return x>=min});
     var t=Math.floor(i*c.length/need.length),pick=null;
     for(var lim=soft;lim<=MAX_PER_DAY&&!pick;lim++){for(var j=0;j<c.length;j++){var dd=c[(t+j)%c.length];if(cnt(dd)<lim){pick=dd;break}}}
-    if(pick){var rec={sid:s.id+"_2",date:pick,teacher:me,ts:Date.now()};tmp[rec.sid]=rec;out.push(rec)}else{fail.push(s.name)}
+    if(pick){var rec={sid:s.id+"_2",date:pick,time:"12:20",teacher:me,ts:Date.now()};tmp[rec.sid]=rec;out.push(rec)}else{fail.push(s.name)}
   });
   flash={c:fail.length?"wa":"ok",t:out.length+" öğrenciye otomatik 2. toplantı tarihi atandı."+(fail.length?" Uygun gün bulunamayanlar ("+fmt(SEC_START)+" – "+fmt(SEC_END)+" aralığında): "+fail.join(", "):"")};
   if(out.length){
@@ -255,7 +258,7 @@ function defs(s,n,tani){
   var tn=tani||s.dx||s.grp;
   var nx=n===1?meetings[s.id+"_2"]:(n===2&&NEED3[s.id]?meetings[s.id+"_3"]:null),nm=s.name,k=s.grp==="Kaynaştırma"||s.grp==="RAM Kademe Farkı",nxt=nx?dmy(nx.date,"/"):"…../……/202….";
   var M=membersFor(s),pd=M.rh.length?M.rh.map(function(m){return m.name}).join(", "):"……………………";
-  var o={tani:s.dx||s.grp,anne:"",srh:k?s.t:"",ozel:k?"":s.t,rh1:M.rh[0]?M.rh[0].name:"",rh2:M.rh[1]?M.rh[1].name:"",bsk:M.bsk.length?M.bsk[0].name:"",dg1g:"",dg1:"",dg2g:"",dg2:"",dg3g:"",dg3:"",nxt:nxt,
+  var o={saat:(meetings[n===1?s.id:s.id+"_"+n]||{}).time||"12:20",tani:s.dx||s.grp,anne:"",srh:k?s.t:"",ozel:k?"":s.t,rh1:M.rh[0]?M.rh[0].name:"",rh2:M.rh[1]?M.rh[1].name:"",bsk:M.bsk.length?M.bsk[0].name:"",dg1g:"",dg1:"",dg2g:"",dg2:"",dg3g:"",dg3:"",nxt:nxt,
   ag1:nm+" isimli öğrenciye yönelik sınıf ve okul içerisinde alınabilecek tedbirlerin görüşülmesi",
   ag2:"Öğrenci ve veli ile yapılması planlanan rehberlik ve psikolojik danışma çalışmalarının Psikolojik Danışman "+pd+" tarafından paylaşılması ve görüşlerin alınması",
   ag3:"Tüm branş öğretmenlerinin öğrenciye ait eğitsel performanslarını sunması",
@@ -389,11 +392,11 @@ function mainView(){
   }
   h+='</div>';
   // yazdırma çıktısı
-  var pr=[];el.forEach(function(s){[s.id,s.id+"_2",s.id+"_3"].forEach(function(k,i){if(meetings[k])pr.push({d:meetings[k].date,s:s,n:i+1})})});
-  pr.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0});
+  var pr=[];el.forEach(function(s){[s.id,s.id+"_2",s.id+"_3"].forEach(function(k,i){if(meetings[k])pr.push({d:meetings[k].date,t:(FORMS[k]||{}).saat||meetings[k].time||"12:20",y:(FORMS[k]||{}).yer||"Rehberlik Servisi",s:s,n:i+1})})});
+  pr.sort(function(a,b){var x=a.d+a.t,y=b.d+b.t;return x<y?-1:x>y?1:0});
   h+='<div class="printonly"><h2>BEP Birim Toplantı Takvimi</h2><p>'+(filterT?esc(filterT):admin?"Tüm öğretmenler":esc(me))+'</p>'+
-  '<table class="pt"><tr><th>Tarih</th><th>Toplantı</th><th>Öğrenci</th><th>Sınıf</th><th>Öğretmen</th></tr>'+
-  pr.map(function(x){return'<tr><td>'+fmt(x.d)+'</td><td>'+x.n+'. toplantı</td><td>'+esc(x.s.name)+'</td><td>'+esc(x.s.cls)+'</td><td>'+esc(x.s.t)+'</td></tr>'}).join("")+'</table></div>';
+  '<table class="pt"><tr><th>Tarih</th><th>Saat</th><th>Toplantı Yeri</th><th>Toplantı</th><th>Öğrenci</th><th>Sınıf</th><th>Öğretmen</th></tr>'+
+  pr.map(function(x){return'<tr><td>'+fmt(x.d)+'</td><td>'+esc(x.t)+'</td><td>'+esc(x.y)+'</td><td>'+x.n+'. toplantı</td><td>'+esc(x.s.name)+'</td><td>'+esc(x.s.cls)+'</td><td>'+esc(x.s.t)+'</td></tr>'}).join("")+'</table></div>';
   app.innerHTML=h;
 }
 
@@ -404,11 +407,14 @@ function lim(sid){
   return{min:"2026-09-01",max:LAST_DAY};
 }
 
+function chg(el){var c=el.parentNode;if(c.querySelector('input[type=date]').value)c.querySelector('button.sv').style.display=''}
+function saveRow(b,sid){var c=b.parentNode,v=c.querySelector('input[type=date]').value,t=c.querySelector('input[type=time]').value||'12:20';if(v)save(sid,v,t)}
 function dateInner(sid,m,enabled){
   var d=m?m.date:"",err=rowErr[sid],l=lim(sid);
   return '<div class="cell">'+
-  '<input type="date" value="'+d+'" min="'+l.min+'" max="'+l.max+'"'+(enabled?'':' disabled')+' onchange="if(this.value)this.nextElementSibling.style.display=\'\'">'+
-  '<button style="display:none" onclick="var v=this.previousElementSibling.value;if(v)save(\''+sid+'\',v)">Kaydet</button>'+
+  '<input type="date" value="'+d+'" min="'+l.min+'" max="'+l.max+'"'+(enabled?'':' disabled')+' onchange="chg(this)">'+
+  '<input type="time" value="'+((m&&m.time)||"12:20")+'"'+(enabled?'':' disabled')+' onchange="chg(this)">'+
+  '<button class="sv" style="display:none" onclick="saveRow(this,\''+sid+'\')">Kaydet</button>'+
   (d?'<button class="g" onclick="openForm(\''+sid+'\')">Form</button><button class="g" onclick="clearDate(\''+sid+'\')">Sil</button>':'')+
   '</div>'+(err?'<div class="msg">'+esc(err)+'</div>':'');
 }
