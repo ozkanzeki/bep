@@ -42,6 +42,7 @@ td.bad input{border-color:var(--er)}.msg{font-size:12px;color:var(--er);margin-t
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.row>*{flex:1;min-width:150px}
 .cell{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .chips{display:flex;flex-wrap:wrap;gap:6px}.chip{display:flex;align-items:center;gap:6px;margin:0;padding:5px 10px;border:1px solid var(--bd);border-radius:99px;color:var(--tx);font-size:13px;cursor:pointer}.chip input{width:auto;padding:0}
+.ck{display:flex;gap:8px;align-items:flex-start;margin:0;padding:7px 0;border-top:1px solid var(--bd);color:var(--tx);font-size:13px;cursor:pointer}.ck input{width:auto;margin-top:3px}
 .printonly{display:none}
 @media print{body{background:#fff!important;color:#000!important}#app>*:not(.printonly){display:none!important}.printonly{display:block!important;color:#000}.printonly h2{margin:0 0 4px;font-size:18px}.printonly p{margin:0 0 10px;font-size:12px}.pt{width:100%;min-width:0;border-collapse:collapse;font-size:12px}.pt th,.pt td{border:1px solid #444;padding:5px 6px;text-align:left;color:#000;background:#fff;position:static}.pt th{background:#e8e8e8}.pt tr{break-inside:avoid}.wrap{padding:0;max-width:none}}
 </style>
@@ -125,13 +126,18 @@ var RAW=[
 "RAM Kademe Farkı|NECATİCAN YAVUZ|2 / F|989|YAŞAM DEMİRCİOĞLU||Dil ve Konuşma Güçlüğü",
 "RAM Kademe Farkı|HAMZA DORUK DEMİR|3 / D|116|SİNEM DEMİR TEK||Hafif Düzeyde Otizm Spektrum Bozukluğu"];
 
-var S=RAW.map(function(r,i){var p=r.split("|");return{id:"s"+(i+1),grp:p[0],name:p[1],cls:p[2],no:p[3],t:p[4],st:p[5],dx:p[6]||""}});
-var TEACHERS=[];S.forEach(function(s){if(TEACHERS.indexOf(s.t)<0)TEACHERS.push(s.t)});TEACHERS.sort(function(a,b){return a.localeCompare(b,"tr")});
-var CLASSES=[];S.forEach(function(s){if(CLASSES.indexOf(s.cls)<0)CLASSES.push(s.cls)});CLASSES.sort(function(a,b){return a.localeCompare(b,"tr",{numeric:true})});
+var SEED=RAW.map(function(r,i){var p=r.split("|");return{id:"s"+(i+1),grp:p[0],name:p[1],cls:p[2],no:p[3],t:p[4],st:p[5],dx:p[6]||""}});
+var S=[],TEACHERS=[],CLASSES=[],STU={},seeding=false;
+function rebuild(){
+  S=Object.keys(STU).map(function(id){var o=STU[id]||{};return{id:id,grp:o.grp||"",name:o.name||"",cls:o.cls||"",no:String(o.no||""),t:o.t||"",st:o.st||"",dx:o.dx||""}})
+    .sort(function(a,b){return(+a.id.slice(1))-(+b.id.slice(1))});
+  TEACHERS=[];S.forEach(function(x){if(x.t&&TEACHERS.indexOf(x.t)<0)TEACHERS.push(x.t)});TEACHERS.sort(function(a,b){return a.localeCompare(b,"tr")});
+  CLASSES=[];S.forEach(function(x){if(x.cls&&CLASSES.indexOf(x.cls)<0)CLASSES.push(x.cls)});CLASSES.sort(function(a,b){return a.localeCompare(b,"tr",{numeric:true})});
+}
 
 // ---- DURUM ----
 var me=null, admin=false, meetings={}, flash=null, rowErr={}, filterT="", tab=1;
-var FORMS = {}, NEED3 = {}, MEM = {}, editM = null, view = null;
+var FORMS = {}, NEED3 = {}, MEM = {}, editM = null, IMP = null, editS = null, view = null;
 var app=document.getElementById("app");
 
 // ---- BULUT ----
@@ -141,7 +147,19 @@ database.ref('meetings').on('value', function(snap){
 });
 database.ref('need3').on('value', function(snap){ NEED3 = snap.val() || {}; softRender(); });
 database.ref('members').on('value', function(snap){ MEM = snap.val() || {}; softRender(); });
-function softRender(){var ae=document.activeElement,mf=document.getElementById('mf');if(!view && !(ae && (ae.type==='date'||ae.type==='time')) && !(mf && mf.contains(ae))) render()}   // takvim açıkken yeniden çizme
+database.ref('students').on('value', function(snap){
+  var v=snap.val();
+  if(v===null&&!seeding){   // ilk kurulum: eski sabit listeyi bir kez buluta aktar
+    seeding=true;
+    database.ref('meta/seeded').once('value').then(function(m){
+      if(m.val()!==true){var u={'meta/seeded':true};SEED.forEach(function(x){u['students/'+x.id]={grp:x.grp,name:x.name,cls:x.cls,no:x.no,t:x.t,st:x.st,dx:x.dx}});database.ref().update(u)}
+      else{STU={};rebuild();softRender()}
+    });
+    return;
+  }
+  STU=v||{};rebuild();softRender();
+});
+function softRender(){var ae=document.activeElement,mf=document.getElementById('mf')||document.getElementById('sf');if(!view && !IMP && !(ae && (ae.type==='date'||ae.type==='time')) && !(mf && mf.contains(ae))) render()}   // takvim açıkken yeniden çizme
 database.ref('forms').on('value', function(snap){
   if(!view){ FORMS = snap.val() || {}; softRender(); }   // form açıkken yazılan metni ezme
 });
@@ -310,6 +328,7 @@ function formMarkup(s,n,d,ed){
 function formView(){
   var b=baseOf(view), n=numOf(view);
   var s=S.filter(function(x){return x.id===b})[0];
+  if(!s){view=null;render();return}
   var d=Object.assign(defs(s,n,(FORMS[view]||{}).tani),FORMS[view]||{});
   var fl=flash?'<div class="banner '+flash.c+'">'+esc(flash.t)+'</div>':"";
   app.innerHTML='<style>'+FORM_CSS+'</style>'+
@@ -378,6 +397,7 @@ function mainView(){
   '<button class="g'+(tab===1?" on":"")+'" onclick="switchTab(1)">Öğrenci Listesi</button>'+
   '<button class="g'+(tab===2?" on":"")+'" onclick="switchTab(2)">Takvim Yoğunluğu</button>'+
   (admin?'<button class="g'+(tab===3?" on":"")+'" onclick="switchTab(3)">BEP Birimi</button>':'')+
+  (admin?'<button class="g'+(tab===4?" on":"")+'" onclick="switchTab(4)">Öğrenciler</button>':'')+
   (tab===1?'<button class="g" onclick="window.print()">Yazdır</button>':'')+
   '</div></div><div class="card tw">';
   if(tab===1){
@@ -388,6 +408,8 @@ function mainView(){
     }).join("")+'</table>';
   }else if(tab===3&&admin){
     h+=memView();
+  }else if(tab===4&&admin){
+    h+=stuView();
   }else{
     h+='<table style="min-width:0"><tr><th>Tarih</th><th>Toplantı</th></tr>';
     for(var d="2026-09-01";d<=LAST_DAY;d=addDays(d,1)){
@@ -435,6 +457,156 @@ function cell3(s){
   return '<td class="'+(rowErr[id]?"bad":"")+'"><label style="display:flex;gap:6px;align-items:center;margin:0 0 6px;color:var(--tx)">'+
   '<input type="checkbox" style="width:auto"'+(on?' checked':'')+' onchange="toggle3(\''+s.id+'\',this.checked)">3. toplantı gerekli</label>'+
   (on?dateInner(id,meetings[id],!!meetings[s.id+"_2"]):'')+'</td>';
+}
+
+function parseStudentPages(pages){
+  var out=[],grp="";
+  function txt(its){var t="",pe=null;its.slice().sort(function(a,b){return a.x-b.x}).forEach(function(i){if(pe!==null&&i.x-pe>1.2&&!/\s$/.test(t)&&!/^\s/.test(i.s))t+=" ";t+=i.s;pe=i.x+i.w});return t.replace(/\s+/g," ").trim()}
+  function cluster(its,tol){var L=[];its.slice().sort(function(a,b){return b.y-a.y}).forEach(function(i){var l=L[L.length-1];if(l&&Math.abs(l.y-i.y)<=tol)l.items.push(i);else L.push({y:i.y,items:[i]})});return L}
+  var KEYS=[["no",/^#/],["name",/^Ad/],["cls",/^S[ıi]n/],["num",/^Numara/],["t",/^Ö.retmen/],["destek",/^Destek/],["dx",/^Yeter/],["rapor",/^Rapor/],["st",/^Devam/]];
+  pages.forEach(function(items){
+    items=items.filter(function(i){return i.s.trim()});
+    var ev=[],isEv=new Set();
+    cluster(items,1.5).forEach(function(l){
+      var t=txt(l.items),sorted=l.items.slice().sort(function(a,b){return a.x-b.x});
+      if(/Numara/.test(t)&&sorted.some(function(i){return i.s.trim()==="#"})){
+        var ch=[],pe=null;sorted.forEach(function(i){if(pe===null||i.x-pe>4)ch.push({x:i.x,t:""});ch[ch.length-1].t+=i.s;pe=i.x+i.w});
+        var cols=[];ch.forEach(function(c){KEYS.forEach(function(k){if(k[1].test(c.t.trim()))cols.push({x:c.x,k:k[0]})})});
+        ev.push({y:l.y,type:"h",cols:cols});l.items.forEach(function(i){isEv.add(i)});
+      }else{
+        var m=/^(.+?)\s+(?:Sınıfı\s+)?\((\d+)\)\s*[—–-]/.exec(t);
+        if(m){ev.push({y:l.y,type:"g",g:m[1].trim()});l.items.forEach(function(i){isEv.add(i)})}
+      }
+    });
+    ev.sort(function(a,b){return b.y-a.y});
+    var regions=[],cur=null,curG=grp;
+    ev.forEach(function(e){if(e.type==="g"){curG=e.g;cur=null}else{cur={y:e.y,cols:e.cols,g:curG,items:[]};regions.push(cur)}});
+    grp=curG;
+    // öğeleri bölgelere dağıt (başlık/grup satırlarından sonra gelenler)
+    items.forEach(function(i){
+      if(isEv.has(i))return;
+      var r=null,last=null;ev.forEach(function(e){if(e.y>i.y+1.5)last=e});
+      if(last&&last.type==="h")regions.forEach(function(x){if(x.y===last.y)r=x});
+      if(r)r.items.push(i);
+    });
+    regions.forEach(function(r){
+      var cols=r.cols;if(!cols.length)return;
+      function colOf(x){var k=null;cols.forEach(function(c){if(c.x<=x+3)k=c.k});return k}
+      var centers=r.items.filter(function(i){return colOf(i.x)==="no"&&/^\d+$/.test(i.s.trim())}).map(function(i){return i.y});
+      if(!centers.length)return;
+      centers.sort(function(a,b){return b-a});
+      var rows=centers.map(function(){return{f:{}}}),byCol={};
+      r.items.forEach(function(i){var k=colOf(i.x);if(k&&k!=="no")(byCol[k]=byCol[k]||[]).push(i)});
+      Object.keys(byCol).forEach(function(k){   // satırlar dikey ortalı: her satır, merkezine en yakın ardışık satır bloğunu alır
+        var L=cluster(byCol[k],1.5),R=centers.length,p=0;
+        for(var ri=0;ri<R&&p<L.length;ri++){
+          var blk=[L[p]],sum=L[p].y;p++;
+          while(p<L.length&&(L.length-p)>(R-ri-1)){
+            var nm=(sum+L[p].y)/(blk.length+1);
+            if(Math.abs(nm-centers[ri])<Math.abs(sum/blk.length-centers[ri])){blk.push(L[p]);sum+=L[p].y;p++}else break;
+          }
+          rows[ri].f[k]=blk.map(function(l){return txt(l.items)}).join(" ").replace(/\s+/g," ").trim();
+        }
+      });
+      rows.forEach(function(w){
+        var f=w.f;
+        var st=(f.st||"").replace(/^[—–✓\s]+/,"");if(st==="aktif")st="";
+        if(f.name&&f.num)out.push({grp:r.g,name:f.name,cls:f.cls||"",no:f.num,t:f.t||"",st:st,dx:f.dx||""});
+      });
+    });
+  });
+  return out;
+}
+
+// ---- ÖĞRENCİ YÖNETİMİ ----
+var GRPS=["Hafif Zihinsel","Orta Ağır Zihinsel","Otistik Hafif","Kaynaştırma","RAM Kademe Farkı"];
+function maxNum(){var m=0;S.forEach(function(x){m=Math.max(m,+x.id.slice(1)||0)});return m}
+function delPaths(u,id){u['students/'+id]=null;['','_2','_3'].forEach(function(x){u['meetings/'+id+x]=null;u['forms/'+id+x]=null});u['need3/'+id]=null}
+
+function stuView(){
+  var e=editS&&STU[editS]?STU[editS]:{grp:"Kaynaştırma",name:"",cls:"",no:"",t:"",st:"",dx:""};
+  var h='<h1 style="font-size:15px">PDF ile Listeyi Güncelle</h1>'+
+  '<div class="sub">Özel Durumlu Öğrenci Listesi PDF’ini seçin. Mevcut listeyle okul numarasına göre karşılaştırılır; siz onaylamadan hiçbir şey değişmez.</div>'+
+  '<input type="file" accept="application/pdf" onchange="readPdf(this)">';
+  if(IMP)h+=impHtml();
+  h+='<h1 style="font-size:15px;margin-top:24px">'+(editS?"Öğrenciyi Düzenle":"Öğrenci Ekle")+'</h1>'+
+  '<div id="sf"><div class="row"><div><label>Ad Soyad</label><input id="sn" value="'+esc(e.name)+'"></div>'+
+  '<div><label>Okul No</label><input id="sno" value="'+esc(e.no)+'"></div>'+
+  '<div><label>Sınıf (ör. 4 / B)</label><input id="sc" value="'+esc(e.cls)+'"></div></div>'+
+  '<div class="row"><div><label>Grup</label><select id="sg">'+GRPS.map(function(g){return'<option'+(e.grp===g?" selected":"")+'>'+g+'</option>'}).join("")+'</select></div>'+
+  '<div><label>Öğretmen</label><input id="stt" list="tl" value="'+esc(e.t)+'"><datalist id="tl">'+TEACHERS.map(function(t){return'<option value="'+esc(t)+'">'}).join("")+'</datalist></div>'+
+  '<div><label>Devamsızlık notu (boşsa aktif)</label><input id="sst" value="'+esc(e.st)+'"></div></div>'+
+  '<label>Yetersizlik Alanı (Tanı)</label><input id="sd" value="'+esc(e.dx)+'">'+
+  '<div class="bar" style="margin-top:12px"><button onclick="saveStu()">'+(editS?"Güncelle":"Ekle")+'</button>'+(editS?'<button class="g" onclick="editS=null;render()">Vazgeç</button>':'')+'</div></div>'+
+  '<h1 style="font-size:15px;margin-top:24px">Kayıtlı Öğrenciler ('+S.length+')</h1>'+
+  '<table><tr><th>#</th><th>Öğrenci</th><th>Grup</th><th>Sınıf / No</th><th>Öğretmen</th><th></th></tr>'+
+  S.map(function(x,i){return'<tr><td class="sm">'+(i+1)+'</td><td><b>'+esc(x.name)+'</b>'+(x.st?'<div class="sm">'+esc(x.st)+'</div>':'')+'</td><td>'+esc(x.grp)+'</td><td>'+esc(x.cls)+' / '+esc(x.no)+'</td><td>'+esc(x.t)+'</td>'+
+    '<td><div class="cell"><button class="g" onclick="editStu(\''+x.id+'\')">Düzenle</button><button class="g" onclick="delStu(\''+x.id+'\')">Sil</button></div></td></tr>'}).join("")+'</table>';
+  return h;
+}
+function editStu(id){editS=id;flash=null;render();window.scrollTo(0,0)}
+function delStu(id){
+  var x=S.filter(function(y){return y.id===id})[0];if(!x)return;
+  if(!confirm(x.name+" ve bu öğrencinin tüm toplantı/form kayıtları silinsin mi?"))return;
+  var u={'meta/seeded':true};delPaths(u,id);flash={c:"ok",t:x.name+" silindi."};database.ref().update(u);
+}
+function saveStu(){
+  var g=function(i){return document.getElementById(i).value.trim()},up=function(v){return v.toLocaleUpperCase("tr")};
+  var rec={name:up(g("sn")),no:g("sno"),cls:g("sc"),grp:g("sg"),t:up(g("stt")),st:g("sst"),dx:g("sd")};
+  if(!rec.name||!rec.no){alert("Ad soyad ve okul numarası zorunlu.");return}
+  if(S.some(function(x){return x.no===rec.no&&x.id!==editS})&&!confirm("Bu okul numarası başka bir öğrencide var. Yine de kaydedilsin mi?"))return;
+  var id=editS||("s"+(maxNum()+1)),u={'meta/seeded':true};
+  Object.keys(rec).forEach(function(k){u['students/'+id+'/'+k]=rec[k]});
+  if(document.activeElement)document.activeElement.blur();
+  editS=null;flash={c:"ok",t:rec.name+" kaydedildi."};
+  database.ref().update(u).catch(function(){flash={c:"er",t:"Öğrenci kaydedilemedi."};render()});
+}
+
+function loadPdfJs(){return new Promise(function(res,rej){
+  if(window.pdfjsLib)return res(window.pdfjsLib);
+  var sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+  sc.onload=function(){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";res(window.pdfjsLib)};
+  sc.onerror=function(){rej(new Error("PDF kütüphanesi yüklenemedi (internet bağlantısını kontrol edin)"))};
+  document.head.appendChild(sc)})}
+function readPdf(inp){
+  var f=inp.files[0];if(!f)return;
+  flash={c:"wa",t:"PDF okunuyor…"};render();
+  loadPdfJs().then(function(lib){return f.arrayBuffer().then(function(b){return lib.getDocument({data:new Uint8Array(b)}).promise})}).then(function(pdf){
+    var ps=[];for(var i=1;i<=pdf.numPages;i++)ps.push(pdf.getPage(i).then(function(p){return p.getTextContent()}).then(function(tc){return tc.items.map(function(x){return{s:x.str,x:x.transform[4],y:x.transform[5],w:x.width}})}));
+    return Promise.all(ps)}).then(function(pages){
+    var list=parseStudentPages(pages);
+    if(!list.length){flash={c:"er",t:"PDF’de öğrenci tablosu bulunamadı. “Özel Durumlu Öğrenci Listesi” biçimi bekleniyor."};render();return}
+    IMP=diffImp(list);flash=null;render();
+  }).catch(function(e){flash={c:"er",t:"PDF okunamadı: "+e.message};render()});
+}
+function diffImp(list){
+  var byNo={},seen={},nw=[],ch=[],F=[["grp","Grup"],["name","Ad"],["cls","Sınıf"],["t","Öğretmen"],["st","Devamsızlık"],["dx","Tanı"]];
+  S.forEach(function(x){byNo[x.no]=x});
+  list.forEach(function(im){
+    var c=byNo[im.no];if(!c){nw.push(im);return}
+    seen[c.id]=1;var d=[];
+    F.forEach(function(f){if((c[f[0]]||"")!==(im[f[0]]||""))d.push(f[1]+": "+(c[f[0]]||"—")+" → "+(im[f[0]]||"—"))});
+    if(d.length)ch.push({id:c.id,im:im,d:d,name:c.name});
+  });
+  return{nw:nw,ch:ch,ms:S.filter(function(x){return!seen[x.id]})};
+}
+function impHtml(){
+  var h='<h1 style="font-size:15px;margin-top:18px">Karşılaştırma Sonucu</h1>',n=0;
+  function sec(t,arr,g,on,fn){if(!arr.length)return;n+=arr.length;h+='<div style="margin-top:12px"><b>'+t+' ('+arr.length+')</b>'+arr.map(function(x,i){return'<label class="ck"><input type="checkbox" data-g="'+g+'" data-i="'+i+'"'+(on?' checked':'')+'><span>'+fn(x)+'</span></label>'}).join('')+'</div>'}
+  sec('Yeni eklenecek',IMP.nw,'nw',true,function(x){return'<b>'+esc(x.name)+'</b> — '+esc(x.cls)+' · No '+esc(x.no)+' · '+esc(x.t)+' <span class="sm">('+esc(x.grp)+')</span>'});
+  sec('Bilgisi güncellenecek',IMP.ch,'ch',true,function(x){return'<b>'+esc(x.name)+'</b><div class="sm">'+x.d.map(function(z){return esc(z)}).join(' · ')+'</div>'});
+  sec('PDF’de bulunmuyor — silinsin mi?',IMP.ms,'ms',false,function(x){return'<b>'+esc(x.name)+'</b> — '+esc(x.cls)+' · No '+esc(x.no)+' <span class="sm">(tüm toplantı kayıtları da silinir)</span>'});
+  if(!n)return h+'<div class="sub">Fark yok: PDF ile mevcut liste aynı.</div><button class="g" onclick="IMP=null;render()">Kapat</button>';
+  return h+'<div class="bar" style="margin-top:14px"><button onclick="applyImp()">Seçilenleri Uygula</button><button class="g" onclick="IMP=null;render()">Vazgeç</button></div>';
+}
+function applyImp(){
+  var u={'meta/seeded':true},n=maxNum(),c={nw:0,ch:0,ms:0};
+  function sel(g){return[].slice.call(document.querySelectorAll('#app input[data-g="'+g+'"]:checked')).map(function(x){return +x.dataset.i})}
+  sel("nw").forEach(function(i){var r=IMP.nw[i],id="s"+(++n);Object.keys(r).forEach(function(k){u['students/'+id+'/'+k]=r[k]});c.nw++});
+  sel("ch").forEach(function(i){var x=IMP.ch[i];Object.keys(x.im).forEach(function(k){u['students/'+x.id+'/'+k]=x.im[k]});c.ch++});
+  sel("ms").forEach(function(i){delPaths(u,IMP.ms[i].id);c.ms++});
+  database.ref().update(u).then(function(){IMP=null;flash={c:"ok",t:c.nw+" öğrenci eklendi, "+c.ch+" güncellendi, "+c.ms+" silindi."};render()})
+  .catch(function(){flash={c:"er",t:"Değişiklikler kaydedilemedi."};render()});
 }
 
 var ROLES={baskan:"Birim Başkanı (Müdür/Müdür Yrd.)",rehber:"Rehber Öğretmen / Psikolojik Danışman",brans:"Branş Öğretmeni"};
@@ -497,7 +669,7 @@ function go(){
   render();
 }
 
-function logout(){me=null;admin=false;view=null;flash=null;filterT="";tab=1;editM=null;render()}
+function logout(){me=null;admin=false;view=null;flash=null;filterT="";tab=1;editM=null;editS=null;IMP=null;render()}
 
 function render(){if(!me)loginView();else if(view)formView();else mainView()}
 render();
