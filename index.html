@@ -13,7 +13,7 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 :root[data-theme="dark"]{--bg:#14161d;--card:#1d2029;--tx:#e8eaf2;--mu:#9aa2b5;--bd:#333847;--pr:#9d86ff;--prt:#14161d;--ok:#5fd38d;--okb:#17301f;--er:#ff8a80;--erb:#3a1e1c;--wa:#ffd27a;--wab:#38300f;--hd:#262a36;color-scheme:dark}
 *{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1000px;margin:0 auto;padding:16px}
+.wrap{max-width:1280px;margin:0 auto;padding:16px}
 h1{font-size:18px;font-weight:600;letter-spacing:-.02em;margin:0 0 4px}.sub{color:var(--mu);font-size:13px;margin:0 0 14px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
 label{display:block;font-size:13px;color:var(--mu);margin:10px 0 4px}
@@ -23,7 +23,7 @@ button:hover{filter:brightness(1.08)}
 button.g{background:transparent;color:var(--tx);border-color:var(--bd)}
 button.g:hover{background:var(--hd);filter:none}
 button.g.on{background:var(--hd);border-color:var(--pr);color:var(--pr)}
-td button{height:32px;min-width:68px;padding:0 12px;font-size:13px;border-radius:8px}
+td button{height:32px;min-width:58px;padding:0 12px;font-size:13px;border-radius:8px}
 .bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.bar button{width:100%}
 .card>select+.bar{margin-top:12px}
 .login{max-width:380px;margin:8vh auto}
@@ -34,8 +34,10 @@ td button{height:32px;min-width:68px;padding:0 12px;font-size:13px;border-radius
 th{background:var(--hd);text-align:left;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--mu);padding:10px 8px;position:sticky;top:0}
 td{padding:8px;border-top:1px solid var(--bd);vertical-align:middle}
 .sm{font-size:12px;color:var(--mu)}
-td input[type=date]{min-width:150px;padding:7px}
-td input[type=time]{width:105px;padding:7px}
+td input[type=date]{flex:1 1 128px;min-width:128px;padding:7px}
+td input[type=time]{flex:0 0 88px;width:88px;padding:7px}
+td.dc{min-width:240px}
+.cell.nw{flex-wrap:nowrap}
 td.bad input{border-color:var(--er)}.msg{font-size:12px;color:var(--er);margin-top:3px}
 .tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:99px;background:var(--hd);color:var(--mu)}
 .tag.ok{background:var(--okb);color:var(--ok)}.tag.er{background:var(--erb);color:var(--er)}
@@ -44,7 +46,7 @@ td.bad input{border-color:var(--er)}.msg{font-size:12px;color:var(--er);margin-t
 .chips{display:flex;flex-wrap:wrap;gap:6px}.chip{display:flex;align-items:center;gap:6px;margin:0;padding:5px 10px;border:1px solid var(--bd);border-radius:99px;color:var(--tx);font-size:13px;cursor:pointer}.chip input{width:auto;padding:0}
 .ck{display:flex;gap:8px;align-items:flex-start;margin:0;padding:7px 0;border-top:1px solid var(--bd);color:var(--tx);font-size:13px;cursor:pointer}.ck input{width:auto;margin-top:3px}
 .printonly{display:none}
-@media print{body{background:#fff!important;color:#000!important}#app>*:not(.printonly){display:none!important}.printonly{display:block!important;color:#000}.printonly h2{margin:0 0 4px;font-size:18px}.printonly p{margin:0 0 10px;font-size:12px}.pt{width:100%;min-width:0;border-collapse:separate;border-spacing:0;border-top:1pt solid #000;border-left:1pt solid #000;font-size:12px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.pt th,.pt td{border-right:1pt solid #000;border-bottom:1pt solid #000;padding:5px 6px;text-align:left;color:#000;background:#fff;position:static}.pt th{background:#e8e8e8}.pt thead{display:table-header-group}.pt tbody,.pt tr{break-inside:avoid;page-break-inside:avoid}.wrap{padding:0;max-width:none}}
+@media print{body{background:#fff!important;color:#000!important}#app>*:not(.printonly){display:none!important}.printonly{display:block!important;color:#000}.printonly h2{margin:0 0 4px;font-size:18px}.printonly p{margin:0 0 10px;font-size:12px}.pt{width:100%;min-width:0;border-collapse:separate;border-spacing:0;font-size:12px;-webkit-print-color-adjust:exact;print-color-adjust:exact}.pt th,.pt td{border-right:1pt solid #000;border-bottom:1pt solid #000;padding:5px 6px;text-align:left;color:#000;background:#fff;position:static}.pt th{background:#e8e8e8;border-top:1pt solid #000}.pt th:first-child,.pt td.c0{border-left:1pt solid #000}.pt td.yr{white-space:nowrap}.pt th.dn,.pt td.dn{width:1%;padding-left:3px;padding-right:3px;text-align:center}.pt thead{display:table-header-group}.pt tbody,.pt tr{break-inside:avoid;page-break-inside:avoid}.wrap{padding:0;max-width:none}}
 </style>
 </head>
 <body>
@@ -432,14 +434,14 @@ function mainView(){
     rows+='<tbody>';
     ks.forEach(function(k,j){
       var m=meetings[k],f=FORMS[k]||{},rs=' rowspan="'+ks.length+'"';
-      rows+='<tr>'+(j===0?'<td'+rs+'>'+(n+1)+'</td><td'+rs+'><b>'+esc(x.name)+'</b><br>'+esc(x.cls)+' / '+esc(x.no)+'</td><td'+rs+'>'+esc(x.t)+'</td>':'')+
-      '<td>'+numOf(k)+'. toplantı</td><td>'+fmt(m.date)+'</td><td>'+esc(f.saat||m.time||"12:20")+'</td><td>'+esc(f.yer||"Rehberlik Servisi")+'</td>'+
-      '<td style="text-align:center">'+(m.done?'<span style="color:#157347;font-weight:700">✓</span>':'')+'</td></tr>';
+      rows+='<tr>'+(j===0?'<td class="c0"'+rs+'>'+(n+1)+'</td><td'+rs+'><b>'+esc(x.name)+'</b><br>'+esc(x.cls)+' / '+esc(x.no)+'</td><td'+rs+'>'+esc(x.t)+'</td>':'')+
+      '<td>'+numOf(k)+'. toplantı</td><td>'+fmt(m.date)+'</td><td>'+esc(f.saat||m.time||"12:20")+'</td><td class="yr">'+esc(f.yer||"Rehberlik Servisi")+'</td>'+
+      '<td class="dn">'+(m.done?'<span style="color:#157347;font-weight:700">✓</span>':'')+'</td></tr>';
     });
     rows+='</tbody>';
   });
   h+='<div class="printonly"><h2>BEP Birim Toplantı Takvimi</h2><p>'+(filterT?esc(filterT):admin?"Tüm öğretmenler":esc(me))+'</p>'+
-  '<table class="pt"><thead><tr><th>#</th><th>Öğrenci</th><th>Öğretmen</th><th>Toplantı</th><th>Tarih</th><th>Saat</th><th>Toplantı Yeri</th><th>Yapıldı</th></tr></thead>'+rows+'</table></div>';
+  '<table class="pt"><thead><tr><th>#</th><th>Öğrenci</th><th>Öğretmen</th><th>Toplantı</th><th>Tarih</th><th>Saat</th><th>Toplantı Yeri</th><th class="dn">Yapıldı</th></tr></thead>'+rows+'</table></div>';
   app.innerHTML=h;
 }
 
@@ -451,26 +453,27 @@ function lim(sid){
 }
 
 function toggleDone(sid){if(confirm('“Gerçekleşti” işareti kaldırılsın mı?'))database.ref('meetings/'+sid+'/done').remove()}
-function chg(el){var c=el.parentNode;if(c.querySelector('input[type=date]').value)c.querySelector('button.sv').style.display=''}
-function saveRow(b,sid){var c=b.parentNode,v=c.querySelector('input[type=date]').value,t=c.querySelector('input[type=time]').value||'12:20';if(v)save(sid,v,t)}
+function chg(el){var w=el.closest('.dw');if(w.querySelector('input[type=date]').value){var k=w.querySelector('button.sv');k.style.display='';k.parentNode.style.display='flex'}}
+function saveRow(b,sid){var w=b.closest('.dw'),v=w.querySelector('input[type=date]').value,t=w.querySelector('input[type=time]').value||'12:20';if(v)save(sid,v,t)}
 function dateInner(sid,m,enabled){
   var d=m?m.date:"",err=rowErr[sid],l=lim(sid);
-  return '<div class="cell">'+
-  (m&&m.done?'<span class="tag ok" style="cursor:pointer" title="Gerçekleşti — işareti kaldırmak için tıklayın" onclick="toggleDone(\''+sid+'\')">✓ Yapıldı</span>':'')+
+  return '<div class="dw"><div class="cell nw">'+
   '<input type="date" value="'+d+'" min="'+l.min+'" max="'+l.max+'"'+(enabled?'':' disabled')+' onchange="chg(this)">'+
   '<input type="time" value="'+((m&&m.time)||"12:20")+'"'+(enabled?'':' disabled')+' onchange="chg(this)">'+
+  '</div><div class="cell" style="margin-top:6px;display:'+(d?'flex':'none')+'">'+
+  (m&&m.done?'<span class="tag ok" style="cursor:pointer" title="Gerçekleşti — işareti kaldırmak için tıklayın" onclick="toggleDone(\''+sid+'\')">✓ Yapıldı</span>':'')+
   '<button class="sv" style="display:none" onclick="saveRow(this,\''+sid+'\')">Kaydet</button>'+
   (d?'<button class="g" onclick="openForm(\''+sid+'\')">Form</button><button class="g" onclick="clearDate(\''+sid+'\')">Sil</button>':'')+
-  '</div>'+(err?'<div class="msg">'+esc(err)+'</div>':'');
+  '</div>'+(err?'<div class="msg">'+esc(err)+'</div>':'')+'</div>';
 }
 
 function dateCell(sid,m,enabled){
-  return '<td class="'+(rowErr[sid]?"bad":"")+'">'+dateInner(sid,m,enabled)+'</td>';
+  return '<td class="dc '+(rowErr[sid]?"bad":"")+'">'+dateInner(sid,m,enabled)+'</td>';
 }
 
 function cell3(s){
   var on=!!NEED3[s.id],id=s.id+"_3";
-  return '<td class="'+(rowErr[id]?"bad":"")+'"><label style="display:flex;gap:6px;align-items:center;margin:0 0 6px;color:var(--tx)">'+
+  return '<td class="dc '+(rowErr[id]?"bad":"")+'"><label style="display:flex;gap:6px;align-items:center;margin:0 0 6px;color:var(--tx)">'+
   '<input type="checkbox" style="width:auto"'+(on?' checked':'')+' onchange="toggle3(\''+s.id+'\',this.checked)">3. toplantı gerekli</label>'+
   (on?dateInner(id,meetings[id],!!meetings[s.id+"_2"]):'')+'</td>';
 }
