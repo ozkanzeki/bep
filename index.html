@@ -204,7 +204,7 @@ function save(sid,d,tm){
   delete rowErr[sid];
   flash={c:"ok",t:s.name+" için BEP "+n+". birim toplantısı "+fmt(d)+" olarak kaydedildi (saat "+tm+")."};
   if(FORMS[sid])delete FORMS[sid].saat;database.ref('forms/'+sid+'/saat').remove();   // saat artık listeden gelir
-  database.ref('meetings/'+sid).set({sid:sid,date:d,time:tm,teacher:me,ts:Date.now()})
+  database.ref('meetings/'+sid).set({sid:sid,date:d,time:tm,teacher:me,ts:Date.now(),done:(meetings[sid]&&meetings[sid].done)||null})
   .catch(function(){flash={c:"er",t:"Bulut veri tabanına kayıt yapılamadı."};render()});
 }
 
@@ -369,7 +369,7 @@ function printForm(){
 
 function saveForm(){
   database.ref('forms/'+view).set(FORMS[view]||{})
-  .then(function(){flash={c:"ok",t:"Form buluta başarıyla kaydedildi."};formView()})
+  .then(function(){if(meetings[view])database.ref("meetings/"+view+"/done").set(true);flash={c:"ok",t:"Form kaydedildi; toplantı “gerçekleşti” olarak işaretlendi."};formView()})
   .catch(function(){flash={c:"er",t:"Form kaydedilirken hata oluştu."};formView()});
 }
 
@@ -420,12 +420,19 @@ function mainView(){
     h+='</table>';
   }
   h+='</div>';
-  // yazdırma çıktısı
-  var pr=[];el.forEach(function(s){[s.id,s.id+"_2",s.id+"_3"].forEach(function(k,i){if(meetings[k])pr.push({d:meetings[k].date,t:(FORMS[k]||{}).saat||meetings[k].time||"12:20",y:(FORMS[k]||{}).yer||"Rehberlik Servisi",s:s,n:i+1})})});
-  pr.sort(function(a,b){var x=a.d+a.t,y=b.d+b.t;return x<y?-1:x>y?1:0});
+  // yazdırma çıktısı: öğrenci bazlı (1. toplantı tarihine göre); 2. ve 3. toplantı öğrencinin adı altında
+  var ps=el.filter(function(x){return meetings[x.id]}),rows='';
+  ps.forEach(function(x,n){
+    var ks=[x.id,x.id+"_2",x.id+"_3"].filter(function(k){return meetings[k]});
+    ks.forEach(function(k,j){
+      var m=meetings[k],f=FORMS[k]||{},rs=' rowspan="'+ks.length+'"';
+      rows+='<tr>'+(j===0?'<td'+rs+'>'+(n+1)+'</td><td'+rs+'><b>'+esc(x.name)+'</b><br>'+esc(x.cls)+' / '+esc(x.no)+'</td><td'+rs+'>'+esc(x.t)+'</td>':'')+
+      '<td>'+numOf(k)+'. toplantı</td><td>'+fmt(m.date)+'</td><td>'+esc(f.saat||m.time||"12:20")+'</td><td>'+esc(f.yer||"Rehberlik Servisi")+'</td>'+
+      '<td style="text-align:center">'+(m.done?'<span style="color:#157347;font-weight:700">✓</span>':'')+'</td></tr>';
+    });
+  });
   h+='<div class="printonly"><h2>BEP Birim Toplantı Takvimi</h2><p>'+(filterT?esc(filterT):admin?"Tüm öğretmenler":esc(me))+'</p>'+
-  '<table class="pt"><tr><th>Tarih</th><th>Saat</th><th>Toplantı Yeri</th><th>Toplantı</th><th>Öğrenci</th><th>Sınıf</th><th>Öğretmen</th></tr>'+
-  pr.map(function(x){return'<tr><td>'+fmt(x.d)+'</td><td>'+esc(x.t)+'</td><td>'+esc(x.y)+'</td><td>'+x.n+'. toplantı</td><td>'+esc(x.s.name)+'</td><td>'+esc(x.s.cls)+'</td><td>'+esc(x.s.t)+'</td></tr>'}).join("")+'</table></div>';
+  '<table class="pt"><tr><th>#</th><th>Öğrenci</th><th>Öğretmen</th><th>Toplantı</th><th>Tarih</th><th>Saat</th><th>Toplantı Yeri</th><th>Yapıldı</th></tr>'+rows+'</table></div>';
   app.innerHTML=h;
 }
 
@@ -436,11 +443,13 @@ function lim(sid){
   return{min:"2026-09-01",max:LAST_DAY};
 }
 
+function toggleDone(sid){if(confirm('“Gerçekleşti” işareti kaldırılsın mı?'))database.ref('meetings/'+sid+'/done').remove()}
 function chg(el){var c=el.parentNode;if(c.querySelector('input[type=date]').value)c.querySelector('button.sv').style.display=''}
 function saveRow(b,sid){var c=b.parentNode,v=c.querySelector('input[type=date]').value,t=c.querySelector('input[type=time]').value||'12:20';if(v)save(sid,v,t)}
 function dateInner(sid,m,enabled){
   var d=m?m.date:"",err=rowErr[sid],l=lim(sid);
   return '<div class="cell">'+
+  (m&&m.done?'<span class="tag ok" style="cursor:pointer" title="Gerçekleşti — işareti kaldırmak için tıklayın" onclick="toggleDone(\''+sid+'\')">✓ Yapıldı</span>':'')+
   '<input type="date" value="'+d+'" min="'+l.min+'" max="'+l.max+'"'+(enabled?'':' disabled')+' onchange="chg(this)">'+
   '<input type="time" value="'+((m&&m.time)||"12:20")+'"'+(enabled?'':' disabled')+' onchange="chg(this)">'+
   '<button class="sv" style="display:none" onclick="saveRow(this,\''+sid+'\')">Kaydet</button>'+
