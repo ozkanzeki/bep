@@ -406,7 +406,8 @@ function mainView(){
     h+='<table><tr><th>#</th><th>Grup</th><th>Öğrenci</th><th>Sınıf/No</th><th>Öğretmen</th><th>1. Toplantı</th><th>2. Toplantı</th><th>3. Toplantı</th></tr>'+
     el.map(function(s,i){
       return '<tr><td class="sm">'+(i+1)+'</td><td>'+esc(s.grp)+'</td><td><b>'+esc(s.name)+'</b>'+(s.st?'<div class="sm">'+esc(s.st)+'</div>':'')+(s.dx?'<div class="sm">'+esc(s.dx)+'</div>':'')+'</td><td>'+esc(s.cls)+' / '+esc(s.no)+'</td><td>'+esc(s.t)+'</td>'+
-        dateCell(s.id,meetings[s.id],true)+dateCell(s.id+"_2",meetings[s.id+"_2"],!!meetings[s.id])+cell3(s)+'</tr>';
+        (s.st&&!meetings[s.id]?'<td colspan="3" class="sm">Toplantı planlanmayacak — '+esc(s.st)+'</td>'
+        :dateCell(s.id,meetings[s.id],true)+dateCell(s.id+"_2",meetings[s.id+"_2"],!!meetings[s.id])+cell3(s))+'</tr>';
     }).join("")+'</table>';
   }else if(tab===3&&admin){
     h+=memView();
