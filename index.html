@@ -441,6 +441,11 @@ function mainView(){
     });
     rows+='</tbody>';
   });
+  // toplantı girişi olmayanlar en altta
+  el.filter(function(x){return!meetings[x.id]}).sort(function(a,b){return(!!a.st)-(!!b.st)}).forEach(function(x,n){
+    rows+='<tbody><tr><td class="c0">'+(ps.length+n+1)+'</td><td><b>'+esc(x.name)+'</b><br>'+esc(x.cls)+' / '+esc(x.no)+'</td><td>'+esc(x.t)+'</td>'+
+    '<td colspan="5"><i>'+(x.st?'Toplantı planlanmayacak — '+esc(x.st):'Henüz giriş yapılmadı')+'</i></td></tr></tbody>';
+  });
   h+='<div class="printonly"><h2>BEP Birim Toplantı Takvimi</h2><p>'+(filterT?esc(filterT):admin?"Tüm öğretmenler":esc(me))+'</p>'+
   '<table class="pt"><thead><tr><th>#</th><th>Öğrenci</th><th>Öğretmen</th><th>Toplantı</th><th>Tarih</th><th>Saat</th><th>Toplantı Yeri</th><th class="dn">Yapıldı</th></tr></thead>'+rows+'</table></div>';
   app.innerHTML=h;
