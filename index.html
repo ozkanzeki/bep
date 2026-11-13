@@ -397,7 +397,6 @@ function mainView(){
     TEACHERS.map(function(t){return'<option value="'+esc(t)+'"'+(filterT===t?" selected":"")+'>'+esc(t)+'</option>'}).join("")+'</select>':'')+'<div class="bar">'+
   '<button onclick="autoAssign2()" title="2. toplantı tarihlerini otomatik ata">2. Toplantıyı Ata</button>'+
   '<button class="g'+(tab===1?" on":"")+'" onclick="switchTab(1)">Öğrenci Listesi</button>'+
-  '<button class="g'+(tab===2?" on":"")+'" onclick="switchTab(2)">Takvim Yoğunluğu</button>'+
   (admin?'<button class="g'+(tab===3?" on":"")+'" onclick="switchTab(3)">BEP Birimi</button>':'')+
   (admin?'<button class="g'+(tab===4?" on":"")+'" onclick="switchTab(4)">Öğrenciler</button>':'')+
   (tab===1?'<button class="g" onclick="window.print()">Yazdır</button>':'')+
@@ -413,14 +412,6 @@ function mainView(){
     h+=memView();
   }else if(tab===4&&admin){
     h+=stuView();
-  }else{
-    h+='<table style="min-width:0"><tr><th>Tarih</th><th>Toplantı</th></tr>';
-    for(var d="2026-09-01";d<=LAST_DAY;d=addDays(d,1)){
-      if(!okDay(d))continue;
-      var n=counts[d]||0,c=n>=MAX_PER_DAY?"er":n>0?"ok":"";
-      h+='<tr><td>'+fmt(d)+'</td><td><span class="tag '+c+'">'+n+' / '+MAX_PER_DAY+' Toplantı</span></td></tr>';
-    }
-    h+='</table>';
   }
   h+='</div>';
   // yazdırma çıktısı: öğrenci bazlı (1. toplantı tarihine göre); 2. ve 3. toplantı öğrencinin adı altında
